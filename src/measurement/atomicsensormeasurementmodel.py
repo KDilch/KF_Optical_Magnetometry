@@ -1,0 +1,37 @@
+# -*- coding: utf-8 -*-
+import logging
+
+from measurement.model import MeasurementModel
+from noise.gaussian_white_noise import GaussianWhiteNoise
+
+
+class AtomicSensorMeasurementModel(MeasurementModel):
+    def __init__(self,
+                 simulation_params,
+                 logger=None
+                 ):
+        self._logger = logger or logging.getLogger(__name__)
+        noise = GaussianWhiteNoise(mean=simulation_params.measurement.noise.mean,
+                                   cov=simulation_params.measurement.noise.R,
+                                   dt=simulation_params.dt)
+        MeasurementModel.__init__(self, simulation_params, noise, logger=logger)
+
+        self._H = self._params.measurement.H
+        self._measurement_strength = self._params.measurement.measurement_strength
+        self.__z = None
+        self.__z_no_noise = None
+
+    def read_sensor(self, state):
+        self.__z_no_noise = self._measurement_strength*self._H.dot(state)
+        self.__z = self.__z_no_noise + self._noise.step()
+        return self.__z
+
+    @property
+    def z(self):
+        """Returns the value measured in the previous step"""
+        return self.__z
+
+    @property
+    def z_no_noise(self):
+        """Returns the value measured previously without the measurement noise (but with the intrinsic noise included"""
+        return self.__z_no_noise
