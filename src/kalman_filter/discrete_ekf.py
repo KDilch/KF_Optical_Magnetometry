@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import copy
+from numpy import dot
 from scipy.linalg import solve_continuous_are
 from scipy.integrate import odeint
 
@@ -16,6 +17,7 @@ class EKF(object):
         self._dim_x = len(self._x)
         self._dim_z = model_params.measurement.dim_z
         self._F = np.eye(self._dim_x)  # linearized dynamics
+        self._fx = None
         self._H = model_params.measurement.H
         self._R = model_params.measurement.R
         self._Q = model_params.noise.Q
@@ -26,27 +28,36 @@ class EKF(object):
 
         self._K = np.zeros(self._x.shape)  # kalman gain
         self._R_inv = np.linalg.inv(self._R)
-
-    def F(self):
-        pass
-
-    def fx(self):
-        pass
+        self._I = np.eye(self._dim_x)
 
     def predict_update(self, dz):
         self._dz = copy.deepcopy(dz)
 
-        self._K = np.dot(np.dot(self._P, self._H.T), self._R_inv)
-        self._y = dz - self._measurement_strength*np.dot(self._H, self._x)*self._dt
+        self._K = np.dot(np.dot(self._P, self._H.T), np.linalg.inv(np.dot(np.dot(self._H, self._P), self._H.T)+self._R))
+        self._y = dz - self._measurement_strength*np.dot(self._H, self._x)  # to do change naming its not dz here!!!
 
-        # self._x = odeint(dx_dt, self._x, np.linspace(self._t, self._t+self._dt, 20), args=(self,))[-1, :]
-        # print(np.dot(self._K, self._y)/self._dt)
-        x = self.fx() + np.dot(self._K, self._y)
-        self._x += x
-        P = np.dot(self.F(), self._P)*self._dt+np.dot(self._P, np.transpose(self.F()))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
-        self._P += P
+        self._x = self.fx() + np.dot(self._K, self._y)
         self._t += self._dt
-        return
+
+        # # predict step
+        # x = np.dot(self._F, self._x)
+        # self._x = x
+        P = np.dot(self.F(), self._P).dot(self.F().T) + self._Q
+        self._P = P
+
+        # # update step
+        # PHT = dot(P, self._H.T)
+        # self.S = dot(self._H, PHT) + self._R
+        # self.SI = np.linalg.inv(self.S)
+        # self._K = dot(PHT, self.SI)
+
+        # self._y = dz - self._measurement_strength*np.dot(self._H, self._x)
+        # self._x = x + dot(self._K, self._y)
+
+        # I_KH = self._I - dot(self._K, self._H)
+        # self._P = dot(I_KH, P).dot(I_KH.T) + dot(self._K, self._R).dot(self._K.T)
+
+        # self._P = np.dot(np.dot(self._F, self._P-np.dot(np.dot(self._K, self._H), self._P)), self._F.T)+self._Q
 
     @property
     def x_est(self):

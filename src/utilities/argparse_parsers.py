@@ -2,6 +2,7 @@ import argparse
 
 from run_tests import run__test
 from run_magnetometer import run__magnetometer
+from run_Hajimolahoseini import run__hajimolahoseini
 
 
 def initialize_parsers():
@@ -35,4 +36,26 @@ def initialize_parsers():
                                    help='Bool specifying if you want to save the data in a file',
                                    default=False)
     simulation_parser.set_defaults(func=run__magnetometer)
+
+
+    hajimolahoseini_parser = subparsers.add_parser('run-hajimolahoseini', help='Run Hajimolahoseini simulation')
+    hajimolahoseini_parser.add_argument('-o',
+                                   '--output_path',
+                                   action='store',
+                                   help='A string representing path where the output should be saved.',
+                                   default='./')
+    hajimolahoseini_parser.add_argument('--config',
+                                   action='store',
+                                   help='A string representing a module name of a config file. Config is a python file.',
+                                   default='config')
+    hajimolahoseini_parser.add_argument('--save_plots',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save plots',
+                                   default=False)
+    hajimolahoseini_parser.add_argument('--save_data_file',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save the data in a file',
+                                   default=False)
+    hajimolahoseini_parser.set_defaults(func=run__hajimolahoseini)
+
     return parser
