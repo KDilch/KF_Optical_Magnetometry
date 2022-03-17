@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 import logging
 import numpy as np
-from scipy.fft import fft, fftfreq
 from munch import DefaultMunch
 
 from utilities.config_util import import_config_from_path
 from dynamics.atomic_sensor_simulation_model import Atomic_Sensor_Simulation_Model
 from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementModel
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
+from utilities.fft import perform_discrete_fft
+from utilities.time_arr import initialize_time_arrays
 
 
 def run__magnetometer(*args):
@@ -42,17 +43,7 @@ def run__magnetometer(*args):
                 )
 
     # continuous measurement for now
-    num_iter_simulation = np.intc(np.floor_divide(simulation_params.t_max,
-                                                  simulation_params.dt))
-    num_iter_filter = np.intc(np.floor_divide(simulation_params.t_max,
-                                              filter_params_ekf.dt))
-    logger.info('Number of filter iterations and number of simulation iterations is respectively  [%r, %r].' %
-                (str(num_iter_filter), str(num_iter_simulation)))
-
-    every_nth_z = np.intc(np.floor_divide(num_iter_simulation, num_iter_filter))
-
-    time_arr_simulation = np.arange(0, simulation_params.t_max, simulation_params.dt)
-    time_arr_filter = np.arange(0, simulation_params.t_max, filter_params_ekf.dt)
+    time_arr_simulation, time_arr_filter, every_nth_z = initialize_time_arrays(simulation_params, filter_params_ekf)
 
     # SIMULATE THE DYNAMICS=====================================================
     simulation_dynamical_model = Atomic_Sensor_Simulation_Model(t=0,
@@ -82,15 +73,8 @@ def run__magnetometer(*args):
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
 
-    #TODO MOVE TH FFT TO A DIFFERENT FILE
-    SAMPLE_RATE = 1/simulation_params.dt
-    NUM_SAMPLES = int(simulation_params.t_max*SAMPLE_RATE)
-    # x_fft = np.abs(fft(x_ekf_est[:, 1]))
-    x_fft = np.abs(fft(xs[:, 1]))
+    # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)
 
-    # get the list of frequencies
-    frequencies = fftfreq(NUM_SAMPLES, simulation_params.dt)
-    logger.info("Fourier trnasporm frequencies are %s" % str(2*np.pi*frequencies[np.where(x_fft == np.amax(x_fft))]))
 
     import matplotlib.pyplot as plt
 
@@ -120,3 +104,4 @@ def run__magnetometer(*args):
     # axs[2].set_ylabel('Jx')
     # axs[2].grid(True)
     # plt.show()
+    return xs, x_ekf_est
