@@ -50,7 +50,7 @@ def run__magnetometer_statistics(*args):
     pool = Pool(8)
     with pool:
         result = pool.starmap(run__magnetometer, args_list)
-    xs, xs_est, x_fft_est, x_fft_from_ekf_est = list(zip(*result))
+    xs, xs_est, x_fft_est, x_fft_from_ekf_est, zs = list(zip(*result))
 
 
     for i in range(num_trajectories):
@@ -84,6 +84,7 @@ def run__magnetometer_statistics(*args):
         mse2_fft_ekf = (xs[0][:, 2] - x_fft_est[0]) ** 2
         mse2_fft_df = pd.DataFrame({'MSE_%r' % i: mse2_fft})
         mse2_fft_ekf_df = pd.DataFrame({'MSE_%r' % i: mse2_fft_ekf})
+
 
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     plot_avg_xs_from_dataframes(time_arr,
