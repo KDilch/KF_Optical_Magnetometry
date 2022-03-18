@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import numpy as np
+from copy import deepcopy
 from munch import DefaultMunch
 
 from utilities.config_util import import_config_from_path
@@ -10,6 +11,7 @@ from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementMode
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
 from utilities.fft import perform_discrete_fft
 from utilities.time_arr import initialize_time_arrays
+from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont
 
 
 def run__magnetometer(*args):
@@ -19,14 +21,14 @@ def run__magnetometer(*args):
 
     logger.info('Loading a config file from path %r' % args[0].config)
     config = import_config_from_path(args[0].config)
-    simulation_params = DefaultMunch.fromDict(config.simulation)
+    simulation_params = DefaultMunch.fromDict(deepcopy(config.simulation))
 
     logger.info('Setting simulation parameters to delta_t_simulation = %r, t_max=%r.' %
                 (str(simulation_params.dt),
                  str(simulation_params.t_max)
                  )
                 )
-    filter_params_ekf = DefaultMunch.fromDict(config.filter_ekf)
+    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
     logger.info('Setting filter parameters to delta_t_filter = %r.' %
                 (str(filter_params_ekf.dt)
                  )
@@ -34,6 +36,9 @@ def run__magnetometer(*args):
 
     logger.info('Setting initial state vec to  [%r].' %
                 (str(config.simulation['x_0'])))
+
+    logger.info('Setting initial ekf state vec to  [%r].' %
+                (str(config.filter_ekf['x_0'])))
 
     logger.info('Setting filter Q, H and R to Q = %r, H = %r, R = %r' %
                 (str(filter_params_ekf.noise.Q),
@@ -62,6 +67,8 @@ def run__magnetometer(*args):
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
 
     x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_filter])
+    x_fft_est = np.array([0 for _ in time_arr_filter])
+    x_fft_from_ekf_est = np.array([0 for _ in time_arr_filter])
 
     P_ekf_est = np.array(
         [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_filter])
@@ -73,35 +80,18 @@ def run__magnetometer(*args):
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
 
+        if index >= 1000:
+            freq_z, ampl_z = perform_discrete_fft(simulation_params, z[0:index])
+            freq_x1_ekf, ampl_x1_ekf = perform_discrete_fft(simulation_params, x_ekf_est[:, 1])
+            x_fft_est[index] = abs(2*np.pi*freq_z[np.where(ampl_z == np.amax(ampl_z))][-1])
+            x_fft_from_ekf_est[index] = abs(2 * np.pi * freq_x1_ekf[np.where(ampl_x1_ekf == np.amax(ampl_x1_ekf))][-1])
+        else:
+            x_fft_est[index] = simulation_params.x_0[2]
+            x_fft_from_ekf_est[index] = simulation_params.x_0[2]
+
+
     # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)
+    # plot_mse_sim_ekf_cont(time_arr_simulation, xs, x_ekf_est, simulation_params)
+    # plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, x_ekf_est, simulation_params)
 
-
-    import matplotlib.pyplot as plt
-
-    # fig = plt.figure(2, figsize=(15, 6))
-    # plt.clf()
-    # plt.plot(frequencies, np.abs(x_fft), lw=1.0, c='paleturquoise')
-    # plt.xlabel("frequency [Hz]")
-    # plt.ylabel("amplitude [a.u.]")
-    # plt.xlim(-10, 10)
-    # plt.title(r"$|\mathcal{F}(A_{signal})|$")
-    # plt.show()
-
-    # fig, axs = plt.subplots(3, 1)
-    # axs[0].plot(time_arr_simulation, xs[:, 1], time_arr_filter, x_ekf_est[:, 1])
-    # axs[0].set_xlabel('time')
-    # axs[0].set_ylabel('Jz')
-    # axs[0].grid(True)
-    #
-    # axs[1].plot(time_arr_simulation, xs[:, 2], time_arr_filter, x_ekf_est[:, 2])
-    # axs[1].set_xlabel('time')
-    # # axs[1].axhline(y=abs(2*np.pi*frequencies[np.where(x_fft == np.amax(x_fft))][-1]), color='r', linestyle='-')
-    # axs[1].set_ylabel('larmour')
-    # axs[1].grid(True)
-    #
-    # axs[2].plot(time_arr_simulation, xs[:, 0], time_arr_filter, x_ekf_est[:, 0])
-    # axs[2].set_xlabel('time')
-    # axs[2].set_ylabel('Jx')
-    # axs[2].grid(True)
-    # plt.show()
-    return xs, x_ekf_est
+    return xs, x_ekf_est, x_fft_est, x_fft_from_ekf_est

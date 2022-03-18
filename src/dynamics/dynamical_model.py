@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from abc import ABC
 import logging
+from copy import deepcopy
 
 
 class Model(ABC):
@@ -19,8 +20,8 @@ class Model(ABC):
 
         self._t = t
         self._logger = logger or logging.getLogger(__name__)
-        self._x = model_params.x_0
-        self._mean_x = model_params.x_0
+        self._x = deepcopy(model_params.x_0)
+        self._mean_x = deepcopy(model_params.x_0)
         self._dt = model_params.dt
         self._noise = noise
         self._params = model_params
