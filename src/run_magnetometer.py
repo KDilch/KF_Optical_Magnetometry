@@ -80,14 +80,14 @@ def run__magnetometer(*args):
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
 
-        if index >= 1000:
-            freq_z, ampl_z = perform_discrete_fft(simulation_params, dz_s_filter_freq[0:index])
-            freq_x1_ekf, ampl_x1_ekf = perform_discrete_fft(simulation_params, x_ekf_est[:, 1])
-            x_fft_est[index] = abs(2*np.pi*freq_z[np.where(ampl_z == np.amax(ampl_z))][-1])
-            x_fft_from_ekf_est[index] = abs(2 * np.pi * freq_x1_ekf[np.where(ampl_x1_ekf == np.amax(ampl_x1_ekf))][-1])
-        else:
-            x_fft_est[index] = simulation_params.x_0[2]
-            x_fft_from_ekf_est[index] = simulation_params.x_0[2]
+        # if index >= 1000:
+        #     freq_z, ampl_z = perform_discrete_fft(simulation_params, dz_s_filter_freq[0:index])
+        #     freq_x1_ekf, ampl_x1_ekf = perform_discrete_fft(simulation_params, x_ekf_est[:, 1])
+        #     x_fft_est[index] = abs(2*np.pi*freq_z[np.where(ampl_z == np.amax(ampl_z))][-1])
+        #     x_fft_from_ekf_est[index] = abs(2 * np.pi * freq_x1_ekf[np.where(ampl_x1_ekf == np.amax(ampl_x1_ekf))][-1])
+        # else:
+        #     x_fft_est[index] = simulation_params.x_0[2]
+        #     x_fft_from_ekf_est[index] = simulation_params.x_0[2]
 
 
     # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)

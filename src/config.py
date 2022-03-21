@@ -3,7 +3,7 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max': 20.,
+    't_max': 10.,
     'dt': 0.0001,
     'spin_corr_const': 0.22,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
