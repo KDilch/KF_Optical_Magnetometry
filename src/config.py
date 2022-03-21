@@ -3,9 +3,9 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max': 20.,
+    't_max': 10.,
     'dt': 0.0001,
-    'spin_corr_const': 0.22,
+    'spin_corr_const': 0.,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
     'x_0': np.array([0., 5., 8.]),  # initial state vector [Jy, Jz, omega]
     't_0': 0,
@@ -23,9 +23,9 @@ config.simulation = {
 
 config.filter_ekf = {
     'dt': 0.0001,
-    'spin_corr_const': 0.22,
+    'spin_corr_const': 0.,
     'frequency_decay_rate': 0.0,
-    'x_0': np.array([0.0, 7.0, 8.01]),
+    'x_0': np.array([0.0, 5.0, 8.01]),
     't_0': 0.,
     'P0': np.array([[0.01, 0., 0.],
                     [0., 0.01, 0.],

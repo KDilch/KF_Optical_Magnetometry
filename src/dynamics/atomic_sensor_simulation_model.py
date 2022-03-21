@@ -31,6 +31,8 @@ class Atomic_Sensor_Simulation_Model(Model):
         dx[0] = - self._params.spin_corr_const * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt
         dx[1] = -self._params.spin_corr_const * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt
         dx[2] = 0
+        # dx = odeint(dx_dt, self._x, np.linspace(self._t, self._t + self._dt, 10), args=(self,))[-1, :]
+
         self._x += dx + self._noise.step()
         return self._x
 
