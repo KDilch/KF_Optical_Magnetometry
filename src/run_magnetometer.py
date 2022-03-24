@@ -11,7 +11,7 @@ from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementMode
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
 from utilities.fft import perform_discrete_fft
 from utilities.time_arr import initialize_time_arrays
-from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont
+from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont, plot_est_cov, plot_fx_diff
 
 
 def run__magnetometer(*args):
@@ -80,18 +80,11 @@ def run__magnetometer(*args):
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
 
-        # if index >= 1000:
-        #     freq_z, ampl_z = perform_discrete_fft(simulation_params, dz_s_filter_freq[0:index])
-        #     freq_x1_ekf, ampl_x1_ekf = perform_discrete_fft(simulation_params, x_ekf_est[:, 1])
-        #     x_fft_est[index] = abs(2*np.pi*freq_z[np.where(ampl_z == np.amax(ampl_z))][-1])
-        #     x_fft_from_ekf_est[index] = abs(2 * np.pi * freq_x1_ekf[np.where(ampl_x1_ekf == np.amax(ampl_x1_ekf))][-1])
-        # else:
-        #     x_fft_est[index] = simulation_params.x_0[2]
-        #     x_fft_from_ekf_est[index] = simulation_params.x_0[2]
-
-
     # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)
     # plot_mse_sim_ekf_cont(time_arr_simulation, xs, x_ekf_est, simulation_params)
-    # plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, x_ekf_est, simulation_params)
+    plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, x_ekf_est, simulation_params)
+    plot_est_cov(time_arr_simulation, xs, x_ekf_est, simulation_params, P_ekf_est)
+    # plot_fx_diff(fx, time_arr_simulation, xs, x_ekf_est, simulation_params)
 
-    return xs, x_ekf_est, x_fft_est, x_fft_from_ekf_est, dz_s
+    return xs, x_ekf_est, x_fft_est, x_fft_from_ekf_est, dz_s, P_ekf_est
+

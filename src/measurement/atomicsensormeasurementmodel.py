@@ -12,7 +12,7 @@ class AtomicSensorMeasurementModel(MeasurementModel):
                  ):
         self._logger = logger or logging.getLogger(__name__)
         noise = GaussianWhiteNoise(mean=simulation_params.measurement.noise.mean,
-                                   cov=simulation_params.measurement.noise.R,
+                                   cov=[simulation_params.measurement.noise.R],
                                    dt=simulation_params.dt)
         MeasurementModel.__init__(self, simulation_params, noise, logger=logger)
 

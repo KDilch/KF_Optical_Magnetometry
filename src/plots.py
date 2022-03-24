@@ -52,6 +52,36 @@ def plot_mse_sim_ekf_cont(time_arr_simulation, xs, xs_est, params):
     plt.savefig('data/plots/mse_omega%r_spin_corr%r_pid%r.png' % (params.x_0[2], params.spin_corr_const, getpid()))
     plt.close()
 
+def plot_est_cov(time_arr_simulation, xs, xs_est, params, P_ekf_est):
+    fig2, axs2 = plt.subplots(3, 1)
+    # axs2[0].loglog(time_arr_simulation, (xs[:, 0] - xs_est[:, 0]) ** 2)
+    # axs2[0].loglog(time_arr_simulation, P_ekf_est[:, 0, 0])
+    axs2[0].plot(time_arr_simulation, (xs[:, 0] - xs_est[:, 0]) ** 2)
+    axs2[0].plot(time_arr_simulation, P_ekf_est[:, 0, 0])
+    axs2[0].set_xlabel('time')
+    axs2[0].set_ylabel('jx')
+    axs2[0].grid(True)
+
+    # axs2[1].loglog(time_arr_simulation, (xs[:, 1] - xs_est[:, 1]) ** 2)
+    # axs2[1].loglog(time_arr_simulation, P_ekf_est[:, 1, 1])
+    axs2[1].plot(time_arr_simulation, (xs[:, 1] - xs_est[:, 1]) ** 2)
+    axs2[1].plot(time_arr_simulation, P_ekf_est[:, 1, 1])
+    axs2[1].set_xlabel('time')
+    axs2[1].set_ylabel('jy')
+    axs2[1].grid(True)
+
+    # axs2[2].loglog(time_arr_simulation, (xs[:, 2] - xs_est[:, 2]) ** 2, label="MSE")
+    # axs2[2].loglog(time_arr_simulation, P_ekf_est[:, 2, 2], label="Kalman Cov")
+    axs2[2].plot(time_arr_simulation, (xs[:, 2] - xs_est[:, 2]) ** 2)
+    axs2[2].plot(time_arr_simulation, P_ekf_est[:, 2, 2])
+    axs2[2].set_xlabel('time')
+    axs2[2].set_ylabel('freq')
+    axs2[2].legend()
+    axs2[2].grid(True)
+    plt.savefig('data/plots/mse_omega_est_cov_filer%r_spin_corr%r_pid%r.png' % (params.x_0[2], params.spin_corr_const, getpid()))
+    plt.close()
+
+
 
 def plot_avg_xs_from_dataframes(time_arr,
                             simulation_x0_data,
@@ -94,32 +124,65 @@ def plot_avg_xs_from_dataframes(time_arr,
     # plt.show()
     plt.close()
 
+def plot_fx_diff(fx, time_arr, xs_sim, xs_est, params):
+    res_xs = [abs(fx(xs_sim[i])-fx(xs_est[i])) for i in range(len(xs_sim))]
+    fig8, axs8 = plt.subplots(3, 1)
+
+    axs8[0].plot(time_arr, res_xs[:, 0])
+    axs8[0].grid(True)
+
+    axs8[1].plot(time_arr, res_xs[:, 1])
+    axs8[1].grid(True)
+
+    axs8[2].plot(time_arr, res_xs[:, 2])
+    axs8[2].grid(True)
+
+    plt.savefig('data/plots/fx_diff_omega%r_spin_corr%r_%r_num_iter%r.png' % (params.x_0[2],
+                                                                                 params.spin_corr_const,
+                                                                                 time(),
+                                                                                 10))
+    plt.close()
+
 
 def plot_avg_mse_from_dataframes(time_arr,
                                  mse_x0_data,
                                  mse_x1_data,
                                  mse_x2_data,
-                                 params
-                            ):
+                                 cov_x0_data,
+                                 cov_x1_data,
+                                 cov_x2_data,
+                                 params):
     fig, axs = plt.subplots(3, 1)
 
     mean_mse_x0 = mse_x0_data.mean(axis=1)
     mean_mse_x1 = mse_x1_data.mean(axis=1)
     mean_mse_x2 = mse_x2_data.mean(axis=1)
+    mean_cov_x0 = cov_x0_data.mean(axis=1)
+    mean_cov_x1 = cov_x0_data.mean(axis=1)
+    mean_cov_x2 = cov_x0_data.mean(axis=1)
 
-    axs[0].loglog(time_arr, mean_mse_x0)
+    # axs[0].loglog(time_arr, mean_mse_x0)
+    # axs[0].loglog(time_arr, mean_cov_x0)
+    axs[0].plot(time_arr, mean_mse_x0)
+    axs[0].plot(time_arr, mean_cov_x0)
     axs[0].set_xlabel('time')
     axs[0].set_ylabel('Jx')
     axs[0].grid(True)
 
-    axs[1].loglog(time_arr, mean_mse_x1)
+    # axs[1].loglog(time_arr, mean_mse_x1)
+    # axs[1].loglog(time_arr, mean_cov_x1)
+    axs[1].plot(time_arr, mean_mse_x1)
+    axs[1].plot(time_arr, mean_cov_x1)
     axs[1].set_xlabel('time')
     # TODO plot fft
     # axs[1].axhline(y=abs(2*np.pi*frequencies[np.where(x_fft == np.amax(x_fft))][-1]), color='r', linestyle='-')
     axs[1].set_ylabel('Jy')
     axs[1].grid(True)
 
-    axs[2].loglog(time_arr, mean_mse_x2)
+    # axs[2].loglog(time_arr, mean_mse_x2)
+    # axs[2].loglog(time_arr, mean_cov_x2)
+    axs[2].plot(time_arr, mean_mse_x2)
+    axs[2].plot(time_arr, mean_cov_x2)
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('frequency')
     axs[2].grid(True)

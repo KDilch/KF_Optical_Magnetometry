@@ -41,10 +41,10 @@ class EKF(object):
 
         # self._x = odeint(dx_dt, self._x, np.linspace(self._t, self._t+self._dt, 20), args=(self,))[-1, :]
         # print(np.dot(self._K, self._y)/self._dt)
-        x = self.fx() + np.dot(self._K, self._y)
-        self._x += x
-        P = np.dot(self.F(), self._P)*self._dt+np.dot(self._P, np.transpose(self.F()))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
-        self._P += P
+        dx = self.fx() + np.dot(self._K, self._y)
+        dP = np.dot(self.F(), self._P)*self._dt+np.dot(self._P, np.transpose(self.F()))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
+        self._x += dx
+        self._P += dP
         self._t += self._dt
         return
 

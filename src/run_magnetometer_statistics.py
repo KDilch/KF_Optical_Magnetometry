@@ -28,7 +28,7 @@ def run__magnetometer_statistics(*args):
                  str(simulation_params.t_max)
                  )
                 )
-    num_trajectories = 2
+    num_trajectories = 10
 
     args_list = [deepcopy(args) for i in range(num_trajectories)]
 
@@ -36,21 +36,26 @@ def run__magnetometer_statistics(*args):
     columns_simulation = ['xs_%r' % i for i in range(num_trajectories)]
     columns_estimator = ['xs_est_%r' % i for i in range(num_trajectories)]
     columns_avgMSE = ['MSE_%r' % i for i in range(num_trajectories)]
+    columns_cov_ekf = ['cov_ekf_%r' % i for i in range(num_trajectories)]
     simulation_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
+    ekf_cov_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     mse_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     simulation_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
+    ekf_cov_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     mse_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     simulation_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
     mse_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
+    ekf_cov_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
+
 
     # #MULTIPROCESSING
-    pool = Pool(8)
+    pool = Pool(10)
     with pool:
         result = pool.starmap(run__magnetometer, args_list)
-    xs, xs_est, x_fft_est, x_fft_from_ekf_est, zs = list(zip(*result))
+    xs, xs_est, x_fft_est, x_fft_from_ekf_est, zs, P_ekf = list(zip(*result))
 
 
     for i in range(num_trajectories):
@@ -61,6 +66,9 @@ def run__magnetometer_statistics(*args):
         x1s_est_df = pd.DataFrame({'xs_est_%r' % i: xs_est[0][:, 1]})
         x2s_df = pd.DataFrame({'xs_%r' % i: xs[0][:, 2]})
         x2s_est_df = pd.DataFrame({'xs_est_%r' % i: xs_est[0][:, 2]})
+        mse0_ekf_df = pd.DataFrame({'cov_ekf_%r' % i: P_ekf[0][:, 0, 0]})
+        mse1_ekf_df = pd.DataFrame({'cov_ekf_%r' % i: P_ekf[0][:, 1, 1]})
+        mse2_ekf_df = pd.DataFrame({'cov_ekf_%r' % i: P_ekf[0][:, 2, 2]})
         mse0 = (xs[0][:, 0] - xs_est[0][:, 0])**2
         mse0_df = pd.DataFrame({'MSE_%r' % i: mse0})
         mse1 = (xs[0][:, 1] - xs_est[0][:, 1]) ** 2
@@ -76,14 +84,17 @@ def run__magnetometer_statistics(*args):
         simulation_x2_data['xs_%r' % i] = x2s_df['xs_%r' % i]
         ekf_x2_data['xs_est_%r' % i] = x2s_est_df['xs_est_%r' % i]
         mse_x2_data['MSE_%r' % i] = mse2_df['MSE_%r' % i]
+        ekf_cov_x0_data['cov_ekf_%r' % i] = mse0_ekf_df['cov_ekf_%r' % i]
+        ekf_cov_x1_data['cov_ekf_%r' % i] = mse1_ekf_df['cov_ekf_%r' % i]
+        ekf_cov_x2_data['cov_ekf_%r' % i] = mse2_ekf_df['cov_ekf_%r' % i]
 
         # CREATE DF FOR FFT
-        x2s_fft_df = pd.DataFrame({'xs_%r' % i: x_fft_est[0]})
-        x2s_fft_of_ekf_df = pd.DataFrame({'xs_est_%r' % i: x_fft_from_ekf_est[0]})
-        mse2_fft = (xs[0][:, 2] - x_fft_est[0]) ** 2
-        mse2_fft_ekf = (xs[0][:, 2] - x_fft_est[0]) ** 2
-        mse2_fft_df = pd.DataFrame({'MSE_%r' % i: mse2_fft})
-        mse2_fft_ekf_df = pd.DataFrame({'MSE_%r' % i: mse2_fft_ekf})
+        # x2s_fft_df = pd.DataFrame({'xs_%r' % i: x_fft_est[0]})
+        # x2s_fft_of_ekf_df = pd.DataFrame({'xs_est_%r' % i: x_fft_from_ekf_est[0]})
+        # mse2_fft = (xs[0][:, 2] - x_fft_est[0]) ** 2
+        # mse2_fft_ekf = (xs[0][:, 2] - x_fft_est[0]) ** 2
+        # mse2_fft_df = pd.DataFrame({'MSE_%r' % i: mse2_fft})
+        # mse2_fft_ekf_df = pd.DataFrame({'MSE_%r' % i: mse2_fft_ekf})
 
 
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
@@ -100,26 +111,29 @@ def run__magnetometer_statistics(*args):
                                  mse_x0_data,
                                  mse_x1_data,
                                  mse_x2_data,
+                                 ekf_cov_x0_data,
+                                 ekf_cov_x1_data,
+                                 ekf_cov_x2_data,
                                  simulation_params)
 
-    plot_avg_omega_with_fft_from_dataframes(time_arr,
-                                            simulation_x2_data,
-                                            ekf_x2_data,
-                                            x2s_fft_df,
-                                            x2s_fft_of_ekf_df,
-                                            mse_x2_data,
-                                            mse2_fft_df,
-                                            mse2_fft_ekf_df,
-                                            simulation_params)
+    # plot_avg_omega_with_fft_from_dataframes(time_arr,
+    #                                         simulation_x2_data,
+    #                                         ekf_x2_data,
+    #                                         x2s_fft_df,
+    #                                         x2s_fft_of_ekf_df,
+    #                                         mse_x2_data,
+    #                                         mse2_fft_df,
+    #                                         mse2_fft_ekf_df,
+    #                                         simulation_params)
 
     simulation_x0_data.to_csv('data/raw_data/sim_x0_omega%r_spin_corr%r_%r_num_iter%r.csv' % (simulation_params.x_0[2],
-                                                                            simulation_params.spin_corr_const,
-                                                                            time(),
-                                                                            mse_x0_data.ndim))
+                                                                                              simulation_params.spin_corr_const,
+                                                                                              time(),
+                                                                                              mse_x0_data.ndim))
     ekf_x0_data.to_csv('data/raw_data/ekf_x0_omega%r_spin_corr%r_%r_num_iter%r.csv' % (simulation_params.x_0[2],
-                                                                            simulation_params.spin_corr_const,
-                                                                            time(),
-                                                                            mse_x0_data.ndim))
+                                                                                       simulation_params.spin_corr_const,
+                                                                                       time(),
+                                                                                       mse_x0_data.ndim))
     mse_x0_data.to_csv('data/raw_data/mse_x0_omega%r_spin_corr%r_%r_num_iter%r.csv' % (simulation_params.x_0[2],
                                                                             simulation_params.spin_corr_const,
                                                                             time(),
