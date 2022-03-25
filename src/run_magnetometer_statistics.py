@@ -11,7 +11,7 @@ from multiprocessing import Pool
 from utilities.config_util import import_config_from_path
 from run_magnetometer import run__magnetometer
 from plots import plot_avg_mse_from_dataframes, plot_avg_xs_from_dataframes,\
-    plot_xs_sim_ekf_cont, plot_mse_sim_ekf_cont, plot_avg_omega_with_fft_from_dataframes
+    plot_xs_sim_ekf_cont, plot_mse_sim_ekf_cont, plot_avg_omega_with_fft_from_dataframes, plot_avg_freq_from_dataframes, plot_avg_mse_loglog_from_dataframes
 
 
 def run__magnetometer_statistics(*args):
@@ -39,27 +39,25 @@ def run__magnetometer_statistics(*args):
     columns_cov_ekf = ['cov_ekf_%r' % i for i in range(num_trajectories)]
     simulation_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
-    ekf_cov_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
+    ekf_cov_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_cov_ekf)
     mse_x0_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     simulation_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
-    ekf_cov_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
+    ekf_cov_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_cov_ekf)
     mse_x1_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
     simulation_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_simulation)
     ekf_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_estimator)
     mse_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
-    ekf_cov_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_avgMSE)
+    ekf_cov_x2_data = pd.DataFrame(data=np.empty((num_iter, num_trajectories)), columns=columns_cov_ekf)
 
 
     # #MULTIPROCESSING
     pool = Pool(10)
     with pool:
         result = pool.starmap(run__magnetometer, args_list)
-    xs, xs_est, x_fft_est, x_fft_from_ekf_est, zs, P_ekf = list(zip(*result))
-
+    xs, xs_est, zs, P_ekf = list(zip(*result))
 
     for i in range(num_trajectories):
-        # xs, xs_est = run__magnetometer(*args) #UNCOMMENT IF OU WANT TO RUN WITHOUT MULTIPROCESSING
         x0s_df = pd.DataFrame({'xs_%r' % i: xs[0][:, 0]})
         x0s_est_df = pd.DataFrame({'xs_est_%r' % i: xs_est[0][:, 0]})
         x1s_df = pd.DataFrame({'xs_%r' % i: xs[0][:, 1]})
@@ -88,15 +86,6 @@ def run__magnetometer_statistics(*args):
         ekf_cov_x1_data['cov_ekf_%r' % i] = mse1_ekf_df['cov_ekf_%r' % i]
         ekf_cov_x2_data['cov_ekf_%r' % i] = mse2_ekf_df['cov_ekf_%r' % i]
 
-        # CREATE DF FOR FFT
-        # x2s_fft_df = pd.DataFrame({'xs_%r' % i: x_fft_est[0]})
-        # x2s_fft_of_ekf_df = pd.DataFrame({'xs_est_%r' % i: x_fft_from_ekf_est[0]})
-        # mse2_fft = (xs[0][:, 2] - x_fft_est[0]) ** 2
-        # mse2_fft_ekf = (xs[0][:, 2] - x_fft_est[0]) ** 2
-        # mse2_fft_df = pd.DataFrame({'MSE_%r' % i: mse2_fft})
-        # mse2_fft_ekf_df = pd.DataFrame({'MSE_%r' % i: mse2_fft_ekf})
-
-
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     plot_avg_xs_from_dataframes(time_arr,
                                 simulation_x0_data,
@@ -108,6 +97,22 @@ def run__magnetometer_statistics(*args):
                                 simulation_params)
 
     plot_avg_mse_from_dataframes(time_arr,
+                                 mse_x0_data,
+                                 mse_x1_data,
+                                 mse_x2_data,
+                                 ekf_cov_x0_data,
+                                 ekf_cov_x1_data,
+                                 ekf_cov_x2_data,
+                                 simulation_params)
+
+    plot_avg_freq_from_dataframes(time_arr,
+                                  simulation_x2_data,
+                                  ekf_x2_data,
+                                  mse_x2_data,
+                                  ekf_cov_x2_data,
+                                  simulation_params)
+
+    plot_avg_mse_loglog_from_dataframes(time_arr,
                                  mse_x0_data,
                                  mse_x1_data,
                                  mse_x2_data,

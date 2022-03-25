@@ -6,11 +6,9 @@ from copy import deepcopy
 from munch import DefaultMunch
 
 from utilities.config_util import import_config_from_path
-from dynamics.atomic_sensor_simulation_model import Atomic_Sensor_Simulation_Model
+from space_state_model.atomic_sensor_simulation_model import Atomic_Sensor_Simulation_Model
 from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementModel
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
-from utilities.fft import perform_discrete_fft
-from utilities.time_arr import initialize_time_arrays
 from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont, plot_est_cov, plot_fx_diff
 
 
@@ -47,44 +45,32 @@ def run__magnetometer(*args):
                  )
                 )
 
-    # continuous measurement for now
-    time_arr_simulation, time_arr_filter, every_nth_z = initialize_time_arrays(simulation_params, filter_params_ekf)
+    # continuous space_state_model and measurement for now
+    # CREATE A TIME ARRAY====================================================
+    num_iter_simulation = np.intc(np.floor_divide(simulation_params.t_max,
+                                                  simulation_params.dt))
 
-    # SIMULATE THE DYNAMICS=====================================================
+    time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
+    # INITIALIZE THE MODEL=====================================================
     simulation_dynamical_model = Atomic_Sensor_Simulation_Model(t=0,
                                                                 simulation_params=simulation_params)
-
-    xs = np.array([np.array((simulation_dynamical_model.step())) for _ in time_arr_simulation])
-
     measurement_model = AtomicSensorMeasurementModel(simulation_params)
-
-    dz_s = np.array([np.array((measurement_model.read_sensor(_))) for _ in xs])  # noisy measurement
-    dz_s_filter_freq = dz_s[::every_nth_z]
-
-    # KALMAN FILTER====================================================
-    logger.info("Initializing ekf_magnetometer")
-
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
 
-    x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_filter])
-    x_fft_est = np.array([0 for _ in time_arr_filter])
-    x_fft_from_ekf_est = np.array([0 for _ in time_arr_filter])
-
+    # ALLOCATE MEMORY FOR THE ARRAYS=====================================================
+    xs = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
+    dz_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
+    x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
     P_ekf_est = np.array(
-        [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_filter])
+        [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
-    for index, time in enumerate(time_arr_filter):
-        z = dz_s_filter_freq[index]
-
-        ekf.predict_update(z)
+    # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
+    for index, time in enumerate(time_arr):
+        xs[index] = simulation_dynamical_model.step()
+        dz_s[index] = measurement_model.read_sensor(xs[index])
+        ekf.predict_update(dz_s[index])
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
 
-    # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)
-    # plot_mse_sim_ekf_cont(time_arr_simulation, xs, x_ekf_est, simulation_params)
-    plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, x_ekf_est, simulation_params)
-    plot_est_cov(time_arr_simulation, xs, x_ekf_est, simulation_params, P_ekf_est)
-    # plot_fx_diff(fx, time_arr_simulation, xs, x_ekf_est, simulation_params)
-
-    return xs, x_ekf_est, x_fft_est, x_fft_from_ekf_est, dz_s, P_ekf_est
+    return xs, x_ekf_est, dz_s, P_ekf_est
 

@@ -6,6 +6,7 @@ from utilities.namespace_util import stringify_namespace
 from utilities.config_util import load_logging_config
 from utilities.argparse_parsers import initialize_parsers
 
+
 def main():
     # setup a logger
     load_logging_config()

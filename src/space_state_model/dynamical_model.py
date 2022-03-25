@@ -5,7 +5,7 @@ from copy import deepcopy
 
 
 class Model(ABC):
-    """An abstract class representing any dynamical dynamics (can be stochastic)."""
+    """An abstract class representing any dynamical space_state_model (can be stochastic)."""
     def __init__(self,
                  t,
                  model_params=None,

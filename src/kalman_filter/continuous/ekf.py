@@ -15,7 +15,7 @@ class EKF(object):
         self._measurement_strength = model_params.measurement.measurement_strength
         self._dim_x = len(self._x)
         self._dim_z = model_params.measurement.dim_z
-        self._F = np.eye(self._dim_x)  # linearized dynamics
+        self._F = np.eye(self._dim_x)  # linearized space_state_model
         self._H = model_params.measurement.H
         self._R = model_params.measurement.R
         self._Q = model_params.noise.Q
