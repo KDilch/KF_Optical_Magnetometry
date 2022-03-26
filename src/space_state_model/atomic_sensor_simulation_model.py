@@ -32,13 +32,6 @@ class Atomic_Sensor_Simulation_Model(Model):
         self._x += dx + self._noise.step()
         return self._x
 
-    def sin_cos(self):
-        x = np.zeros(self._x.size)
-        x[0] = 5*np.sin(self._t*self._x[2])
-        x[1] = 5*np.cos(self._t*self._x[2])
-        x[2] = 0
-        self._x = x + self._noise.step()
-
     @staticmethod
     def dx_dt(x, t, self):
         dx_dt = np.zeros(x.shape)

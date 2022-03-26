@@ -6,7 +6,8 @@ config.simulation = {
     't_max': 6.,
     'dt': 0.0001,
     'dim_measurement': 1,
-    'spin_corr_const': 0.0,
+    'decoherence_x': 0.0,
+    'decoherence_y': 0.0,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
     'x_0': np.array([0., 5., 8.]),  # initial state vector [Jy, Jz, omega]
     't_0': 0,
@@ -24,7 +25,8 @@ config.simulation = {
 
 config.filter_ekf = {
     'dt': 0.0001,
-    'spin_corr_const': 0.0,
+    'decoherence_x': 0.0,
+    'decoherence_y': 0.0,
     'frequency_decay_rate': 0.0,
     'x_0': np.array([0.0, 5.0, 8.1]),
     't_0': 0.,

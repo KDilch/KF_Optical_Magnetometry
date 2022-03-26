@@ -6,8 +6,7 @@ from copy import deepcopy
 from munch import DefaultMunch
 
 from utilities.config_util import import_config_from_path
-from space_state_model.atomic_sensor_simulation_model import Atomic_Sensor_Simulation_Model
-from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementModel
+from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
 from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont, plot_est_cov, plot_fx_diff
 
@@ -52,25 +51,23 @@ def run__magnetometer(*args):
 
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     # INITIALIZE THE MODEL=====================================================
-    simulation_dynamical_model = Atomic_Sensor_Simulation_Model(t=0,
-                                                                simulation_params=simulation_params)
-    measurement_model = AtomicSensorMeasurementModel(simulation_params)
+    simulation_dynamical_model = Simple_CC_Sensor_Model(t=0,
+                                                        simulation_params=simulation_params)
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
 
     # ALLOCATE MEMORY FOR THE ARRAYS=====================================================
     xs = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
-    dz_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
+    z_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
     x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
-    P_ekf_est = np.array(
-        [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
+    P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
     # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
     for index, time in enumerate(time_arr):
-        xs[index] = simulation_dynamical_model.step()
-        dz_s[index] = measurement_model.read_sensor(xs[index])
-        ekf.predict_update(dz_s[index])
+        # SIMULATION AND MEASUREMENT==============================
+        xs[index], z_s[index] = simulation_dynamical_model.step()
+        # KALMAN FILTER===========================================
+        ekf.predict_update(z_s[index])
         x_ekf_est[index] = ekf.x_est
         P_ekf_est[index] = ekf.P_est
-
-    return xs, x_ekf_est, dz_s, P_ekf_est
-
+    plot_xs_sim_ekf_cont(time_arr, xs, time_arr, x_ekf_est, simulation_params)
+    return xs, x_ekf_est, z_s, P_ekf_est

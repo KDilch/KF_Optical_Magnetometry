@@ -23,8 +23,8 @@ class AtomicSensorMeasurementModel(MeasurementModel):
         self.__dz_no_noise = simulation_params.x_0[1]
 
     def read_sensor(self, state):
-        self.__dz_no_noise = self._measurement_strength * self._H.dot(state) * self._dt
-        self.__dz = self.__dz_no_noise + self._noise.step()
+        dz = self._measurement_strength * self._H.dot(state) * self._dt
+        self.__dz = dz + self._noise.step()
         return self.__dz
 
     @property

@@ -55,7 +55,3 @@ class EKF(object):
     @property
     def P_est(self):
         return self._P
-
-
-def dx_dt(x, t, self):
-    return np.dot(self._F, x) + np.dot(self._K, self._y)/self._dt

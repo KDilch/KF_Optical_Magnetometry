@@ -21,9 +21,9 @@ def plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, xs_est, param
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('jy')
     axs[2].grid(True)
-    # plt.show()
-    plt.savefig('data/plots/xs_omega%r_spin_corr%r_pid%r.png' % (params.x_0[2], params.spin_corr_const, getpid()))
-    plt.close()
+    plt.show()
+    # plt.savefig('data/plots/xs_omega%r_spin_corr%r_pid%r.png' % (params.x_0[2], params.spin_corr_const, getpid()))
+    # plt.close()
 
 
 def plot_mse_sim_ekf_cont(time_arr_simulation, xs, xs_est, params):
