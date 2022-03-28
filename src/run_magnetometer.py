@@ -66,8 +66,9 @@ def run__magnetometer(*args):
         # SIMULATION AND MEASUREMENT==============================
         xs[index], z_s[index] = simulation_dynamical_model.step()
         # KALMAN FILTER===========================================
-        ekf.predict_update(z_s[index])
-        x_ekf_est[index] = ekf.x_est
-        P_ekf_est[index] = ekf.P_est
+        if args[0].ekf:
+            ekf.predict_update(z_s[index])
+            x_ekf_est[index] = ekf.x_est
+            P_ekf_est[index] = ekf.P_est
     plot_xs_sim_ekf_cont(time_arr, xs, time_arr, x_ekf_est, simulation_params)
     return xs, x_ekf_est, z_s, P_ekf_est

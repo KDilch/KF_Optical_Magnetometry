@@ -21,17 +21,21 @@ def initialize_parsers():
                                    '--output_path',
                                    action='store',
                                    help='A string representing path where the output should be saved.',
-                                   default='./')
+                                   default='./data')
     simulation_parser.add_argument('--config',
                                    action='store',
                                    help='A string representing a module name of a config file. Config is a python file.',
                                    default='config')
 
-    simulation_parser.add_argument('--save_plots',
+    simulation_parser.add_argument('--ekf',
                                    action='store_true',
                                    help='Bool specifying if you want to save plots',
                                    default=False)
-    simulation_parser.add_argument('--save_data_file',
+    simulation_parser.add_argument('--save_data',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save the data in a file',
+                                   default=False)
+    simulation_parser.add_argument('--save_plots',
                                    action='store_true',
                                    help='Bool specifying if you want to save the data in a file',
                                    default=False)

@@ -11,14 +11,14 @@ config.simulation = {
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
     'x_0': np.array([0., 5., 8.]),  # initial state vector [Jy, Jz, omega]
     't_0': 0,
-    'noise': {'Q': np.array([[0.01, 0., 0.],
-                             [0., 0.01, 0.],
-                             [0., 0., 0.0]]),
+    'noise': {'Q_jx': 0.01,
+              'Q_jy': 0.01,
+              'Q_freq': 0.0,
               'mean': np.array([0.0, 0.0, 0.0])},
     'measurement': {'measurement_strength': 1.,
                     'H': np.array([[0., 1., 0.]]),
-                    'noise': {'R': np.array([0.001]),
-                              'mean': np.array([0.0])}
+                    'noise': {'R': 0.001,
+                              'mean': 0.0}
                     }
 }
 
