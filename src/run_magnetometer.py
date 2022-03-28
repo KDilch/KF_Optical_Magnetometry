@@ -8,7 +8,8 @@ from munch import DefaultMunch
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
 from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
-from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont, plot_est_cov, plot_fx_diff
+from plots import plot_simple_model
+from utilities.save_data import save_data_simple_simulation, prepare_df
 
 
 def run__magnetometer(*args):
@@ -70,5 +71,22 @@ def run__magnetometer(*args):
             ekf.predict_update(z_s[index])
             x_ekf_est[index] = ekf.x_est
             P_ekf_est[index] = ekf.P_est
-    plot_xs_sim_ekf_cont(time_arr, xs, time_arr, x_ekf_est, simulation_params)
+    if args[0].ekf:
+        df = prepare_df(time_arr, xs, xs_est=x_ekf_est, P_est=P_ekf_est)
+    else:
+        df = prepare_df(time_arr, xs)
+
+    if args[0].save_data:
+        save_data_simple_simulation(df, simulation_params, args[0].output_path)
+    if args[0].save_plots:
+        plot_simple_model(df,
+                          dir_name=args[0].output_path+'/plots',
+                          params=simulation_params,
+                          simulation=True,
+                          ekf=args[0].ekf,
+                          err=args[0].ekf,
+                          err_loglog=args[0].ekf,
+                          show=False,
+                          save=True)
+
     return xs, x_ekf_est, z_s, P_ekf_est

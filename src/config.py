@@ -3,7 +3,7 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max': 6.,
+    't_max': 1.,
     'dt': 0.0001,
     'dim_measurement': 1,
     'decoherence_x': 0.0,
@@ -13,8 +13,7 @@ config.simulation = {
     't_0': 0,
     'noise': {'Q_jx': 0.01,
               'Q_jy': 0.01,
-              'Q_freq': 0.0,
-              'mean': np.array([0.0, 0.0, 0.0])},
+              'Q_freq': 0.0},
     'measurement': {'measurement_strength': 1.,
                     'H': np.array([[0., 1., 0.]]),
                     'noise': {'R': 0.001,

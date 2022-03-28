@@ -10,8 +10,7 @@ from multiprocessing import Pool
 
 from utilities.config_util import import_config_from_path
 from run_magnetometer import run__magnetometer
-from plots import plot_avg_mse_from_dataframes, plot_avg_xs_from_dataframes,\
-    plot_xs_sim_ekf_cont, plot_mse_sim_ekf_cont, plot_avg_omega_with_fft_from_dataframes, plot_avg_freq_from_dataframes, plot_avg_mse_loglog_from_dataframes
+from plots import plot_avg_mse_from_dataframes, plot_avg_xs_from_dataframes
 
 
 def run__magnetometer_statistics(*args):
