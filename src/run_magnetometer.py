@@ -77,10 +77,10 @@ def run__magnetometer(*args):
         df = prepare_df(time_arr, xs)
 
     if args[0].save_data:
-        save_data_simple_simulation(df, simulation_params, args[0].output_path)
+        save_data_simple_simulation(df, simulation_params, args[0].output_path+'/data/csv')
     if args[0].save_plots:
         plot_simple_model(df,
-                          dir_name=args[0].output_path+'/plots',
+                          dir_name=args[0].output_path+'/data/plots',
                           params=simulation_params,
                           simulation=True,
                           ekf=args[0].ekf,
@@ -88,5 +88,4 @@ def run__magnetometer(*args):
                           err_loglog=args[0].ekf,
                           show=False,
                           save=True)
-
-    return xs, x_ekf_est, z_s, P_ekf_est
+    return df

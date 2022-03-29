@@ -22,7 +22,7 @@ class Simple_CC_Sensor_Model(Model):
         self._logger.debug('Performing a step for time %r' % str(self._t))
         if method == 'runge-kutta':
             x = odeint(Simple_CC_Sensor_Model.dx_dt, self._x,
-                       np.linspace(self._t, self._t + self._dt, 10),
+                       np.linspace(self._t, self._t + self._dt, 20),
                        args=(self._params.decoherence_x,
                              self._params.decoherence_y,
                              self.get_intrinsic_noise()))[-1, :]

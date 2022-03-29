@@ -3,7 +3,7 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max': 1.,
+    't_max': 100.,
     'dt': 0.0001,
     'dim_measurement': 1,
     'decoherence_x': 0.0,
