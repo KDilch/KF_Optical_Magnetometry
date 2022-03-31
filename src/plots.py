@@ -28,6 +28,31 @@ def plot_simulation(df, show=False, save=True, dir_name='./', filename='4.png'):
     plt.close()
 
 
+def plot_simulation_PYTHON_JULIA(python_df, julia_df, show=False, save=True, dir_name='./', filename='5.png'):
+    fig, axs = plt.subplots(3, 1)
+    axs[0].plot(python_df['time'], python_df['x0s'])
+    axs[0].set_xlabel('time')
+    axs[0].set_ylabel('Jx')
+    axs[0].grid(True)
+
+    axs[1].plot(python_df['time'], python_df['x1s'])
+    axs[1].set_xlabel('time')
+    axs[1].set_ylabel('Jy')
+    axs[1].grid(True)
+
+    axs[2].plot(python_df['time'], python_df['x2s'])
+    axs[2].set_xlabel('time')
+    axs[2].set_ylabel('frequency')
+    axs[2].grid(True)
+    if show:
+        plt.show()
+    if save:
+        if not os.path.isdir(dir_name):
+            os.mkdir(dir_name)
+        plt.savefig(os.path.join(dir_name, filename))
+    plt.close()
+
+
 def plot_simulation_and_ekf(df, show=False, save=True, dir_name='./', filename='3.png'):
     fig, axs = plt.subplots(3, 1)
     axs[0].plot(df['time'], df['x0s'])

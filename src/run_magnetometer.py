@@ -4,6 +4,8 @@ import logging
 import numpy as np
 from copy import deepcopy
 from munch import DefaultMunch
+import tqdm
+import os
 
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
@@ -63,7 +65,7 @@ def run__magnetometer(*args):
     P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
     # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
-    for index, time in enumerate(time_arr):
+    for index, time in enumerate(tqdm.tqdm(time_arr, desc='pid:%r' % os.getpid())):
         # SIMULATION AND MEASUREMENT==============================
         xs[index], z_s[index] = simulation_dynamical_model.step(method=args[0].method)
         # KALMAN FILTER===========================================

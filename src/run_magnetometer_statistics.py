@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from tqdm.auto import tqdm as std_tqdm
 import logging
 from munch import DefaultMunch
 from copy import deepcopy
@@ -24,14 +25,11 @@ def run__magnetometer_statistics(*args):
                  str(simulation_params.t_max)
                  )
                 )
-    num_trajectories = np.intc(args[0].num_reps)
+    num_reps = np.intc(args[0].num_reps)
 
-    args_list = [deepcopy(args) for i in range(num_trajectories)]
+    args_list = [deepcopy(args) for _ in range(num_reps)]
 
     # MULTIPROCESSING
     pool = Pool(10)
     with pool:
         pool.starmap(run__magnetometer, args_list)
-
-    # TODO save a copy of config file
-

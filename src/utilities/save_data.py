@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from datetime import datetime
+from tqdm.dask import TqdmCallback
 
 
 def save_data_simple_simulation(df, params, dir_name):
@@ -43,18 +44,30 @@ def prepare_df(time_arr, xs, xs_est=None, P_est=None):
 def prepare_avg_ddf(ddf):
     groupedByTime = ddf.groupby('time')
     time_arr = groupedByTime.time.mean().compute()
-    x0s_est_avg = groupedByTime.x0s_est.mean().compute()
-    x1s_est_avg = groupedByTime.x1s_est.mean().compute()
-    x2s_est_avg = groupedByTime.x2s_est.mean().compute()
-    x0s_avg = groupedByTime.x0s.mean().compute()
-    x1s_avg = groupedByTime.x1s.mean().compute()
-    x2s_avg = groupedByTime.x2s.mean().compute()
-    x0s_est_avg_err = groupedByTime.x0_err_cov.mean().compute()
-    x1s_est_avg_err = groupedByTime.x1_err_cov.mean().compute()
-    x2s_est_avg_err = groupedByTime.x2_err_cov.mean().compute()
-    x0s_avg_err = groupedByTime.mse_x0.mean().compute()
-    x1s_avg_err = groupedByTime.mse_x1.mean().compute()
-    x2s_avg_err = groupedByTime.mse_x2.mean().compute()
+    with TqdmCallback(desc="Calculating x0_est avg"):
+        x0s_est_avg = groupedByTime.x0s_est.mean().compute()
+    with TqdmCallback(desc="Calculating x1_est avg"):
+        x1s_est_avg = groupedByTime.x1s_est.mean().compute()
+    with TqdmCallback(desc="Calculating x2_est avg"):
+        x2s_est_avg = groupedByTime.x2s_est.mean().compute()
+    with TqdmCallback(desc="Calculating x0 avg"):
+        x0s_avg = groupedByTime.x0s.mean().compute()
+    with TqdmCallback(desc="Calculating x1 avg"):
+        x1s_avg = groupedByTime.x1s.mean().compute()
+    with TqdmCallback(desc="Calculating x2 avg"):
+        x2s_avg = groupedByTime.x2s.mean().compute()
+    with TqdmCallback(desc="Calculating x0 avg cov"):
+        x0s_est_avg_err = groupedByTime.x0_err_cov.mean().compute()
+    with TqdmCallback(desc="Calculating x1 avg cov"):
+        x1s_est_avg_err = groupedByTime.x1_err_cov.mean().compute()
+    with TqdmCallback(desc="Calculating x2 avg cpv"):
+        x2s_est_avg_err = groupedByTime.x2_err_cov.mean().compute()
+    with TqdmCallback(desc="Calculating x0 avg err"):
+        x0s_avg_err = groupedByTime.mse_x0.mean().compute()
+    with TqdmCallback(desc="Calculating x1 avg err"):
+        x1s_avg_err = groupedByTime.mse_x1.mean().compute()
+    with TqdmCallback(desc="Calculating x2 avg err"):
+        x2s_avg_err = groupedByTime.mse_x2.mean().compute()
     list_of_avg_series = [time_arr,
                           x0s_est_avg,
                           x1s_est_avg,
