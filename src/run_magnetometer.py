@@ -7,7 +7,7 @@ from munch import DefaultMunch
 
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
-from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
+from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 
@@ -65,7 +65,7 @@ def run__magnetometer(*args):
     # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
     for index, time in enumerate(time_arr):
         # SIMULATION AND MEASUREMENT==============================
-        xs[index], z_s[index] = simulation_dynamical_model.step()
+        xs[index], z_s[index] = simulation_dynamical_model.step(method=args[0].method)
         # KALMAN FILTER===========================================
         if args[0].ekf:
             ekf.predict_update(z_s[index])

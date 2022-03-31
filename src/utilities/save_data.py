@@ -1,7 +1,6 @@
 import pandas as pd
 import os
 from datetime import datetime
-import dask.dataframe as dd
 
 
 def save_data_simple_simulation(df, params, dir_name):
@@ -42,19 +41,20 @@ def prepare_df(time_arr, xs, xs_est=None, P_est=None):
 
 
 def prepare_avg_ddf(ddf):
-    time_arr = ddf.groupby('time').time.mean().compute()
-    x0s_est_avg = ddf.groupby('time').x0s_est.mean().compute()
-    x1s_est_avg = ddf.groupby('time').x1s_est.mean().compute()
-    x2s_est_avg = ddf.groupby('time').x2s_est.mean().compute()
-    x0s_avg = ddf.groupby('time').x0s.mean().compute()
-    x1s_avg = ddf.groupby('time').x1s.mean().compute()
-    x2s_avg = ddf.groupby('time').x2s.mean().compute()
-    x0s_est_avg_err = ddf.groupby('time').x0_err_cov.mean().compute()
-    x1s_est_avg_err = ddf.groupby('time').x1_err_cov.mean().compute()
-    x2s_est_avg_err = ddf.groupby('time').x2_err_cov.mean().compute()
-    x0s_avg_err = ddf.groupby('time').mse_x0.mean().compute()
-    x1s_avg_err = ddf.groupby('time').mse_x1.mean().compute()
-    x2s_avg_err = ddf.groupby('time').mse_x2.mean().compute()
+    groupedByTime = ddf.groupby('time')
+    time_arr = groupedByTime.time.mean().compute()
+    x0s_est_avg = groupedByTime.x0s_est.mean().compute()
+    x1s_est_avg = groupedByTime.x1s_est.mean().compute()
+    x2s_est_avg = groupedByTime.x2s_est.mean().compute()
+    x0s_avg = groupedByTime.x0s.mean().compute()
+    x1s_avg = groupedByTime.x1s.mean().compute()
+    x2s_avg = groupedByTime.x2s.mean().compute()
+    x0s_est_avg_err = groupedByTime.x0_err_cov.mean().compute()
+    x1s_est_avg_err = groupedByTime.x1_err_cov.mean().compute()
+    x2s_est_avg_err = groupedByTime.x2_err_cov.mean().compute()
+    x0s_avg_err = groupedByTime.mse_x0.mean().compute()
+    x1s_avg_err = groupedByTime.mse_x1.mean().compute()
+    x2s_avg_err = groupedByTime.mse_x2.mean().compute()
     list_of_avg_series = [time_arr,
                           x0s_est_avg,
                           x1s_est_avg,
@@ -79,8 +79,8 @@ def save_data_avg_simple_simulation(df, dir_name, num_reps):
         os.mkdir(dir_name)
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
 
-    df.to_csv(os.path.join(dir_name, 'avgs_%s_pid_%r_num_reps_%r.csv' % (date,
-                                                                         os.getpid(),
-                                                                         num_reps
-                                                                         ))
+    df.to_csv(os.path.join(dir_name, 'avg_%s_pid_%r_num_reps_%r.csv' % (date,
+                                                                        os.getpid(),
+                                                                        num_reps
+                                                                        ))
               )

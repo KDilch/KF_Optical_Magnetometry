@@ -45,7 +45,7 @@ class Model(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def read_sensor(self):
+    def read_sensor(self, noise=None):
         raise NotImplementedError
 
     @abstractmethod

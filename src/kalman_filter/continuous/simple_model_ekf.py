@@ -20,4 +20,3 @@ class MagnetometerEKF(EKF):
         x[1] += -0.0 * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt
         x[2] += 0
         return x
-

@@ -22,7 +22,7 @@ def initialize_parsers():
                                    '--output_path',
                                    action='store',
                                    help='A string representing path where the output should be saved.',
-                                   default='./data')
+                                   default='./')
     simulation_parser.add_argument('--config',
                                    action='store',
                                    help='A string representing a module name of a config file. Config is a python file.',
@@ -40,9 +40,14 @@ def initialize_parsers():
                                    action='store_true',
                                    help='Bool specifying if you want to save the data in a file',
                                    default=False)
+    simulation_parser.add_argument('--method',
+                                   action='store',
+                                   help='A string representing a method used to solve SDEs.',
+                                   default='default')
     simulation_parser.set_defaults(func=run__magnetometer)
     # RUN STATISTICS=========================================================================================
-    simulation_parser_stat = subparsers.add_parser('run-magnetometer-statistics', help='Run atomic sensor simulation with reps')
+    simulation_parser_stat = subparsers.add_parser('run-magnetometer-statistics',
+                                                   help='Run atomic sensor simulation with reps')
     simulation_parser_stat.add_argument('-o',
                                         '--output_path',
                                         action='store',
@@ -71,6 +76,10 @@ def initialize_parsers():
                                         action='store_true',
                                         help='Bool specifying if you want to save the data in a file',
                                         default=False)
+    simulation_parser_stat.add_argument('--method',
+                                        action='store',
+                                        help='A string representing a method used to solve SDEs.',
+                                        default='default')
     simulation_parser_stat.set_defaults(func=run__magnetometer_statistics)
     # RUN SIMPLE MODEL ANALYSIS=========================================================================================
     simulation_parser_stat = subparsers.add_parser('run-magnetometer-analysis', help='Run atomic sensor data analysis')
