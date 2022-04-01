@@ -56,7 +56,7 @@ def initialize_parsers():
     simulation_parser_stat.add_argument('--config',
                                         action='store',
                                         help='A string representing a module name of a config file. Config is a python file.',
-                                        default='config')
+                                        default="C:/Users\Klaudia\Documents\Python_projects\kalman_filters_in_magnetometry\src\config.py")
 
     simulation_parser_stat.add_argument('--ekf',
                                         action='store_true',

@@ -40,7 +40,6 @@ class EKF(object):
         self._y = dz - self._measurement_strength*np.dot(self._H, self._x)*self._dt
 
         # self._x = odeint(dx_dt, self._x, np.linspace(self._t, self._t+self._dt, 20), args=(self,))[-1, :]
-        # print(np.dot(self._K, self._y)/self._dt)
         dx = self.fx() + np.dot(self._K, self._y)
         dP = np.dot(self.F(), self._P)*self._dt+np.dot(self._P, np.transpose(self.F()))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
         self._x += dx

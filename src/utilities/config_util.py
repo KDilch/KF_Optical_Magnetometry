@@ -4,8 +4,10 @@ import logging.config
 import logging
 from importlib import import_module
 
+
 def import_config_from_path(module_name):
-    module_object = import_module(module_name)
+    filename = os.path.basename(module_name)
+    module_object = import_module(str(os.path.splitext(filename)[0]))
     return getattr(module_object, 'config')
 
 

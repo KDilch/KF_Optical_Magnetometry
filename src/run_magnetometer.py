@@ -6,6 +6,7 @@ from copy import deepcopy
 from munch import DefaultMunch
 import tqdm
 import os
+import json
 
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
@@ -22,13 +23,13 @@ def run__magnetometer(*args):
     logger.info('Loading a config file from path %r' % args[0].config)
     config = import_config_from_path(args[0].config)
     simulation_params = DefaultMunch.fromDict(deepcopy(config.simulation))
+    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
 
     logger.info('Setting simulation parameters to delta_t_simulation = %r, t_max=%r.' %
                 (str(simulation_params.dt),
                  str(simulation_params.t_max)
                  )
                 )
-    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
     logger.info('Setting filter parameters to delta_t_filter = %r.' %
                 (str(filter_params_ekf.dt)
                  )
@@ -79,10 +80,10 @@ def run__magnetometer(*args):
         df = prepare_df(time_arr, xs)
 
     if args[0].save_data:
-        save_data_simple_simulation(df, simulation_params, args[0].output_path+'/data/csv')
+        save_data_simple_simulation(df, simulation_params, args[0].output_path+'/csv')
     if args[0].save_plots:
         plot_simple_model(df,
-                          dir_name=args[0].output_path+'/data/plots',
+                          dir_name=args[0].output_path+'/plots',
                           params=simulation_params,
                           simulation=True,
                           ekf=args[0].ekf,
