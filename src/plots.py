@@ -99,7 +99,8 @@ def plot_avg_mse_from_dataframes(time_arr,
                                  mse_x0_data,
                                  mse_x1_data,
                                  mse_x2_data,
-                                 params
+                                 params,
+                                 num_trajectories
                             ):
     fig, axs = plt.subplots(3, 1)
 
@@ -107,19 +108,19 @@ def plot_avg_mse_from_dataframes(time_arr,
     mean_mse_x1 = mse_x1_data.mean(axis=1)
     mean_mse_x2 = mse_x2_data.mean(axis=1)
 
-    axs[0].loglog(time_arr, mean_mse_x0)
+    axs[0].plot(time_arr, mean_mse_x0)
     axs[0].set_xlabel('time')
     axs[0].set_ylabel('Jx')
     axs[0].grid(True)
 
-    axs[1].loglog(time_arr, mean_mse_x1)
+    axs[1].plot(time_arr, mean_mse_x1)
     axs[1].set_xlabel('time')
     # TODO plot fft
     # axs[1].axhline(y=abs(2*np.pi*frequencies[np.where(x_fft == np.amax(x_fft))][-1]), color='r', linestyle='-')
     axs[1].set_ylabel('Jy')
     axs[1].grid(True)
 
-    axs[2].loglog(time_arr, mean_mse_x2)
+    axs[2].plot(time_arr, mean_mse_x2)
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('frequency')
     axs[2].grid(True)
@@ -128,7 +129,7 @@ def plot_avg_mse_from_dataframes(time_arr,
         'data/plots_avg/mse_avg_omega%r_spin_corr%r_%r_num_iter%r.png' % (params.x_0[2],
                                                                             params.spin_corr_const,
                                                                             time(),
-                                                                            mse_x0_data.ndim)
+                                                                            num_trajectories)
                                                                             )
     plt.close()
     return

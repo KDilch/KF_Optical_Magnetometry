@@ -28,7 +28,7 @@ def run__magnetometer_statistics(*args):
                  str(simulation_params.t_max)
                  )
                 )
-    num_trajectories = 2
+    num_trajectories = 10
 
     args_list = [deepcopy(args) for i in range(num_trajectories)]
 
@@ -99,17 +99,18 @@ def run__magnetometer_statistics(*args):
                                  mse_x0_data,
                                  mse_x1_data,
                                  mse_x2_data,
-                                 simulation_params)
+                                 simulation_params,
+                                 num_trajectories)
 
-    plot_avg_omega_with_fft_from_dataframes(time_arr,
-                                            simulation_x2_data,
-                                            ekf_x2_data,
-                                            x2s_fft_df,
-                                            x2s_fft_of_ekf_df,
-                                            mse_x2_data,
-                                            mse2_fft_df,
-                                            mse2_fft_ekf_df,
-                                            simulation_params)
+    # plot_avg_omega_with_fft_from_dataframes(time_arr,
+    #                                         simulation_x2_data,
+    #                                         ekf_x2_data,
+    #                                         x2s_fft_df,
+    #                                         x2s_fft_of_ekf_df,
+    #                                         mse_x2_data,
+    #                                         mse2_fft_df,
+    #                                         mse2_fft_ekf_df,
+    #                                         simulation_params)
 
     simulation_x0_data.to_csv('data/raw_data/sim_x0_omega%r_spin_corr%r_%r_num_iter%r.csv' % (simulation_params.x_0[2],
                                                                             simulation_params.spin_corr_const,

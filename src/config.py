@@ -3,15 +3,15 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max': 2.,
+    't_max': 10.,
     'dt': 0.0001,
-    'spin_corr_const': 0.22,
+    'spin_corr_const': 0.0,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
-    'x_0': np.array([0., 5., 8.]),  # initial state vector [Jy, Jz, omega]
+    'x_0': np.array([5., 0., 8.]),  # initial state vector [Jy, Jz, omega]
     't_0': 0,
     'noise': {'Q': np.array([[0.01, 0., 0.],
                              [0., 0.01, 0.],
-                             [0., 0., 0.01]]),
+                             [0., 0., 0.0]]),
               'mean': np.array([0.0, 0.0, 0.0])},
     'measurement': {'measurement_strength': 10.,
                     'H': np.array([[0., 1., 0.]]),
@@ -23,16 +23,16 @@ config.simulation = {
 
 config.filter_ekf = {
     'dt': 0.0001,
-    'spin_corr_const': 0.22,
+    'spin_corr_const': 0.0,
     'frequency_decay_rate': 0.0,
-    'x_0': np.array([0.0, 7.0, 8.01]),
+    'x_0': np.array([5.0, 0.0, 8.01]),
     't_0': 0.,
-    'P0': np.array([[0.01, 0., 0.],
-                    [0., 0.01, 0.],
+    'P0': np.array([[0.0, 0., 0.],
+                    [0., 0.0, 0.],  # let's assume we know Jx and Jy perfectly from the beginning
                     [0., 0., 0.01]]),
     'noise': {'Q': np.array([[0.01, 0., 0.],
                              [0., 0.01, 0.],
-                             [0., 0., 0.01]]),
+                             [0., 0., 0.0]]),
               'mean': np.array([0.0, 0.0, 0.0])},
     'measurement': {'measurement_strength': 10.,
                     'H': np.array([[0., 1., 0.]]),

@@ -30,7 +30,7 @@ def initialize_parsers():
 
     simulation_parser.add_argument('--save_plots',
                                    action='store_true',
-                                   help='Bool specifying if you want to save plots',
+                                   help='Bool specifying if you want to save data',
                                    default=False)
     simulation_parser.add_argument('--save_data_file',
                                    action='store_true',
@@ -51,7 +51,7 @@ def initialize_parsers():
 
     simulation_parser_stat.add_argument('--save_plots',
                                    action='store_true',
-                                   help='Bool specifying if you want to save plots',
+                                   help='Bool specifying if you want to save data',
                                    default=False)
     simulation_parser_stat.add_argument('--save_data_file',
                                    action='store_true',
@@ -71,7 +71,7 @@ def initialize_parsers():
                                    default='config')
     hajimolahoseini_parser.add_argument('--save_plots',
                                    action='store_true',
-                                   help='Bool specifying if you want to save plots',
+                                   help='Bool specifying if you want to save data',
                                    default=False)
     hajimolahoseini_parser.add_argument('--save_data_file',
                                    action='store_true',
