@@ -4,7 +4,7 @@ config = SimpleNamespace()
 
 config.simulation = {
     't_max':  10.,
-    'dt': 0.001,
+    'dt': 0.0001,
     'dim_measurement': 1,
     'decoherence_x': 0.0,
     'decoherence_y': 0.0,
@@ -22,7 +22,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 0.001,
+    'dt': 0.0001,
     'decoherence_x': 0.0,
     'decoherence_y': 0.0,
     'frequency_decay_rate': 0.0,

@@ -4,14 +4,15 @@ import logging
 import numpy as np
 from copy import deepcopy
 from munch import DefaultMunch
+import tqdm
+import os
+import json
 
 from utilities.config_util import import_config_from_path
-from dynamics.atomic_sensor_simulation_model import Atomic_Sensor_Simulation_Model
-from measurement.atomicsensormeasurementmodel import AtomicSensorMeasurementModel
-from kalman_filter.continuous.magnetometer_ekf import MagnetometerEKF
-from utilities.fft import perform_discrete_fft
-from utilities.time_arr import initialize_time_arrays
-from plots import plot_mse_sim_ekf_cont, plot_xs_sim_ekf_cont
+from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
+from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
+from plots import plot_simple_model
+from utilities.save_data import save_data_simple_simulation, prepare_df
 
 
 def run__magnetometer(*args):
@@ -22,13 +23,13 @@ def run__magnetometer(*args):
     logger.info('Loading a config file from path %r' % args[0].config)
     config = import_config_from_path(args[0].config)
     simulation_params = DefaultMunch.fromDict(deepcopy(config.simulation))
+    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
 
     logger.info('Setting simulation parameters to delta_t_simulation = %r, t_max=%r.' %
                 (str(simulation_params.dt),
                  str(simulation_params.t_max)
                  )
                 )
-    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
     logger.info('Setting filter parameters to delta_t_filter = %r.' %
                 (str(filter_params_ekf.dt)
                  )
@@ -47,51 +48,47 @@ def run__magnetometer(*args):
                  )
                 )
 
-    # continuous measurement for now
-    time_arr_simulation, time_arr_filter, every_nth_z = initialize_time_arrays(simulation_params, filter_params_ekf)
+    # continuous space_state_model and measurement for now
+    # CREATE A TIME ARRAY====================================================
+    num_iter_simulation = np.intc(np.floor_divide(simulation_params.t_max,
+                                                  simulation_params.dt))
 
-    # SIMULATE THE DYNAMICS=====================================================
-    simulation_dynamical_model = Atomic_Sensor_Simulation_Model(t=0,
-                                                                simulation_params=simulation_params)
-
-    xs = np.array([np.array((simulation_dynamical_model.step())) for _ in time_arr_simulation])
-
-    measurement_model = AtomicSensorMeasurementModel(simulation_params)
-
-    dz_s = np.array([np.array((measurement_model.read_sensor(_))) for _ in xs])  # noisy measurement
-    dz_s_filter_freq = dz_s[::every_nth_z]
-
-    # KALMAN FILTER====================================================
-    logger.info("Initializing ekf_magnetometer")
-
+    time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
+    # INITIALIZE THE MODEL=====================================================
+    simulation_dynamical_model = Simple_CC_Sensor_Model(t=0,
+                                                        simulation_params=simulation_params)
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
 
-    x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_filter])
-    x_fft_est = np.array([0 for _ in time_arr_filter])
-    x_fft_from_ekf_est = np.array([0 for _ in time_arr_filter])
+    # ALLOCATE MEMORY FOR THE ARRAYS=====================================================
+    xs = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
+    z_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
+    x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
+    P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
-    P_ekf_est = np.array(
-        [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_filter])
+    # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
+    for index, time in enumerate(tqdm.tqdm(time_arr, desc='pid:%r' % os.getpid())):
+        # SIMULATION AND MEASUREMENT==============================
+        xs[index], z_s[index] = simulation_dynamical_model.step(method=args[0].method)
+        # KALMAN FILTER===========================================
+        if args[0].ekf:
+            ekf.predict_update(z_s[index])
+            x_ekf_est[index] = ekf.x_est
+            P_ekf_est[index] = ekf.P_est
+    if args[0].ekf:
+        df = prepare_df(time_arr, xs, xs_est=x_ekf_est, P_est=P_ekf_est)
+    else:
+        df = prepare_df(time_arr, xs)
 
-    for index, time in enumerate(time_arr_filter):
-        z = dz_s_filter_freq[index]
-
-        ekf.predict_update(z)
-        x_ekf_est[index] = ekf.x_est
-        P_ekf_est[index] = ekf.P_est
-
-        if index >= 1000:
-            freq_z, ampl_z = perform_discrete_fft(simulation_params, z[0:index])
-            freq_x1_ekf, ampl_x1_ekf = perform_discrete_fft(simulation_params, x_ekf_est[:, 1])
-            x_fft_est[index] = abs(2*np.pi*freq_z[np.where(ampl_z == np.amax(ampl_z))][-1])
-            x_fft_from_ekf_est[index] = abs(2 * np.pi * freq_x1_ekf[np.where(ampl_x1_ekf == np.amax(ampl_x1_ekf))][-1])
-        else:
-            x_fft_est[index] = simulation_params.x_0[2]
-            x_fft_from_ekf_est[index] = simulation_params.x_0[2]
-
-
-    # freqs, xs_fft = perform_discrete_fft(simulation_params, xs)
-    # plot_mse_sim_ekf_cont(time_arr_simulation, xs, x_ekf_est, simulation_params)
-    # plot_xs_sim_ekf_cont(time_arr_simulation, xs, time_arr_filter, x_ekf_est, simulation_params)
-
-    return xs, x_ekf_est, x_fft_est, x_fft_from_ekf_est
+    if args[0].save_data:
+        save_data_simple_simulation(df, simulation_params, args[0].output_path+'/csv')
+    if args[0].save_plots:
+        plot_simple_model(df,
+                          dir_name=args[0].output_path+'/plots',
+                          params=simulation_params,
+                          simulation=True,
+                          ekf=args[0].ekf,
+                          err=args[0].ekf,
+                          err_loglog=args[0].ekf,
+                          show=False,
+                          save=True)
+    return df
