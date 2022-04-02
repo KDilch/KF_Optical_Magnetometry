@@ -105,5 +105,35 @@ def initialize_parsers():
                                         help='Bool specifying if you want to save the data in a file',
                                         default=False)
     simulation_parser_stat.set_defaults(func=analyze__magnetometer_statistics)
+    # RUN SIMPLE MODEL CORRELATED SIMULATION================================================================
+    simulation_parser_corr = subparsers.add_parser('run-magnetometer-corr',
+                                                   help='Run atomic sensor simple model correlated simulation')
+    simulation_parser_corr.add_argument('-o',
+                                        '--output_path',
+                                        action='store',
+                                        help='A string representing path where the output should be saved.',
+                                        default='./')
+    simulation_parser_corr.add_argument('--config',
+                                        action='store',
+                                        help='A string representing a module name of a config file. Config is a python file.',
+                                        default='config')
+
+    simulation_parser_corr.add_argument('--ekf',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save plots',
+                                        default=False)
+    simulation_parser_corr.add_argument('--save_data',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data in a file',
+                                        default=False)
+    simulation_parser_corr.add_argument('--save_plots',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data in a file',
+                                        default=False)
+    simulation_parser_corr.add_argument('--method',
+                                        action='store',
+                                        help='A string representing a method used to solve SDEs.',
+                                        default='default')
+    simulation_parser_corr.set_defaults(func=run__magnetometer)
 
     return parser
