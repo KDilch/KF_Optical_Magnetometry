@@ -4,6 +4,7 @@ from run_tests import run__test
 from run_magnetometer import run__magnetometer
 from run_magnetometer_statistics import run__magnetometer_statistics
 from analyze_magnetometer_statistics import analyze__magnetometer_statistics
+from run_magnetometer_corr import run__magnetometer_corr
 
 
 def initialize_parsers():
@@ -53,6 +54,10 @@ def initialize_parsers():
                                         action='store',
                                         help='A string representing path where the output should be saved.',
                                         default='./')
+    simulation_parser_stat.add_argument('--simulation_type',
+                                        action='store',
+                                        help='A string representing a simulation type - simple/corr.',
+                                        default="simple")
     simulation_parser_stat.add_argument('--config',
                                         action='store',
                                         help='A string representing a module name of a config file. Config is a python file.',
@@ -134,6 +139,6 @@ def initialize_parsers():
                                         action='store',
                                         help='A string representing a method used to solve SDEs.',
                                         default='default')
-    simulation_parser_corr.set_defaults(func=run__magnetometer)
+    simulation_parser_corr.set_defaults(func=run__magnetometer_corr)
 
     return parser

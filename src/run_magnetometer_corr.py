@@ -6,7 +6,6 @@ from copy import deepcopy
 from munch import DefaultMunch
 import tqdm
 import os
-import json
 
 from utilities.config_util import import_config_from_path
 from space_state_model.corr_simple_sensor_model import Simple_CC_Correlated_Sensor_Model
@@ -15,7 +14,7 @@ from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 
 
-def run__magnetometer(*args):
+def run__magnetometer_corr(*args):
     # Logger for storing errors and logs in separate file, creates separate folder
     logger = logging.getLogger(__name__)
     logger.info('Starting execution of run-frequency-extractor command.')
@@ -56,7 +55,7 @@ def run__magnetometer(*args):
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     # INITIALIZE THE MODEL=====================================================
     simulation_dynamical_model = Simple_CC_Correlated_Sensor_Model(t=0,
-                                                        simulation_params=simulation_params)
+                                                                   simulation_params=simulation_params)
     ekf = CorrSimpleModelEKF(model_params=filter_params_ekf)
 
     # ALLOCATE MEMORY FOR THE ARRAYS=====================================================

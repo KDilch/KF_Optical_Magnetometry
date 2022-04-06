@@ -6,8 +6,8 @@ from tqdm.dask import TqdmCallback
 
 
 def save_data_simple_simulation(df, params, dir_name):
-    if not os.path.isdir(dir_name):
-        os.mkdir(dir_name)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
 
     df.to_csv(os.path.join(dir_name, '%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.csv' % (date,

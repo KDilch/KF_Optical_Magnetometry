@@ -12,6 +12,7 @@ from multiprocessing import Pool
 
 from utilities.config_util import import_config_from_path
 from run_magnetometer import run__magnetometer
+from run_magnetometer_corr import run__magnetometer_corr
 
 
 def run__magnetometer_statistics(*args):
@@ -19,6 +20,8 @@ def run__magnetometer_statistics(*args):
     logger = logging.getLogger(__name__)
     logger.info('Starting execution of run-magnetometer-statistics command.')
     logger.info('Loading a config file from path %r' % args[0].config)
+    if not os.path.exists(args[0].output_path):
+        os.makedirs(args[0].output_path)
     shutil.copyfile(args[0].config, os.path.join(args[0].output_path, 'config_%s' % datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')))
     config = import_config_from_path(args[0].config)
     simulation_params = DefaultMunch.fromDict(config.simulation)
@@ -33,6 +36,11 @@ def run__magnetometer_statistics(*args):
     args_list = [deepcopy(args) for _ in range(num_reps)]
 
     # MULTIPROCESSING
-    pool = Pool(10)
-    with pool:
-        pool.starmap(run__magnetometer, args_list)
+    if args[0].simulation_type == 'simple':
+        pool = Pool(10)
+        with pool:
+            pool.starmap(run__magnetometer, args_list)
+    elif args[0].simulation_type == 'corr':
+        pool = Pool(10)
+        with pool:
+            pool.starmap(run__magnetometer_corr, args_list)
