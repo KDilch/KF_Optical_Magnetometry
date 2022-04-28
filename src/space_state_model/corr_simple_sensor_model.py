@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import logging
 from scipy.integrate import odeint
+import sdeint
+from functools import partial
 import numpy as np
 
 from space_state_model.model import Model
@@ -21,6 +23,11 @@ class Simple_CC_Correlated_Sensor_Model(Model):
         self._t += self._dt
         self._logger.debug('Performing a step for time %r' % str(self._t))
         noise = np.random.randn()
+        if method == 'sdeint':
+            tspan = np.linspace(self._t, self._t + self._dt, 20)
+            fx_bound = partial(self.fx, params=self._params)
+            B_bound = partial(self.B, params=self._params)
+
         if method == 'odeint':
             x = odeint(Simple_CC_Correlated_Sensor_Model.dx_dt, self._x,
                        np.linspace(self._t, self._t + self._dt, 20),
@@ -47,11 +54,10 @@ class Simple_CC_Correlated_Sensor_Model(Model):
         return
 
     @staticmethod
-    def dx_dt(x, t, decoherence_x, decoherence_y, dt, intrinsic_noise):
-        dx_dt = np.array([- decoherence_x * x[0] + x[1] * x[2],
-                          - decoherence_y * x[1] - x[0] * x[2],
+    def fx(x, t, params):
+        dx_dt = np.array([- params.decoherence_x * x[0] + x[1] * x[2],
+                          - params.decoherence_y * x[1] - x[0] * x[2],
                           0.0])
-        dx_dt += np.sqrt(dt)*intrinsic_noise
         return dx_dt
 
     def hx(self):
