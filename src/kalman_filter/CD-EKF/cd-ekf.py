@@ -1,56 +1,43 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import numpy as np
 import copy
-from scipy.integrate import odeint, solve_ivp
-from kalman_filter.continuous.ekf import EKF
+from scipy.integrate import odeint
 
 
-class CorrSimpleModelEKF(EKF):
-    def __init__(self, model_params):
-        EKF.__init__(self, model_params=model_params)
-        self.model_params = model_params
-        self._F = self.F(self._x, model_params)
-        self._B = model_params.noise.B
-        self._S = model_params.noise.S
+class Corr_CD_EKF(object):
+    def __init__(self,
+                 model_params):
+        self._x = model_params.x_0
+        self._t = model_params.t_0
+        self._dt = model_params.dt
+        self._measurement_strength = model_params.measurement.measurement_strength
+        self._dim_x = len(self._x)
+        self._dim_z = model_params.measurement.dim_z
+        self._F = np.eye(self._dim_x)  # linearized space_state_model
+        self._H = model_params.measurement.H
+        self._R = model_params.measurement.R
+        self._Q = model_params.noise.Q
+        self._P = model_params.P0
+        self._y = np.zeros((self._dim_z, 1))  # residual
+        self._dz = np.array([model_params.x_0[1]] * self._dim_z)
+        self._K = np.zeros(self._x.shape)  # kalman gain
+        self._R_inv = np.linalg.inv(self._R)
 
     @staticmethod
     def F(x, model_params):
-        return np.array([[-model_params.decoherence_x, x[2], x[1]],
-                         [-x[2], -model_params.decoherence_y, -x[0]],
-                         [0.0, 0.0, 0.0]])
+        raise NotImplementedError('Implement F function.')
 
     @staticmethod
     def fx(x_0, model_params):
-        x = np.zeros(3)
-        x[0] = - model_params.decoherence_x * x_0[0] + x_0[1] * x_0[2]
-        x[1] = - model_params.decoherence_y * x_0[1] - x_0[0] * x_0[2]
-        x[2] = 0
-        return x
-
-    @staticmethod
-    def dx_dt(x, t, K, y, dt, model_params):
-        return CorrSimpleModelEKF.fx(x, model_params) + np.dot(K, y) / dt
-
-    @staticmethod
-    def dP_dt(P, t, x, F, K, B, H, Q, dim_x, model_params):
-        P = np.reshape(P, (dim_x, dim_x))
-        dP = np.dot(F(x, model_params), P) +\
-             np.dot(P, np.transpose(F(x, model_params))) -\
-             np.dot(np.dot(K, H), P) + np.dot(B, Q).dot(B.T)
-        #
-        #
-        #      np.reshape(np.dot(CorrSimpleModelEKF.F(x, model_params),
-        #                       np.reshape(P, (dim_x, dim_x)))
-        #                + np.dot(np.reshape(P, (dim_x, dim_x)),
-        #                         np.transpose(CorrSimpleModelEKF.F(x, model_params)))
-        #                - np.dot(np.dot(K, H), np.reshape(P, (dim_x, dim_x))) + np.dot(B, Q).dot(B.T), dim_x ** 2)
-        return np.reshape(dP, dim_x ** 2)
+        raise NotImplementedError('Implement fx function.')
 
     def predict_update(self, dz):
         self._dz = copy.deepcopy(dz)
         self._K = np.dot(np.dot(self._P, self._H.T) + np.dot(self._B, self._S.T), self._R_inv)
         self._y = dz - self._measurement_strength * np.dot(self._H, self._x) * self._dt
         t = np.linspace(self._t, self._t + self._dt, num=20)
-        P = odeint(CorrSimpleModelEKF.dP_dt,
+        P = odeint(Corr_CD_EKF.dP_dt,
                    np.reshape(self._P, self._dim_x ** 2),
                    t,
                    args=(self._x,
@@ -81,7 +68,11 @@ class CorrSimpleModelEKF(EKF):
         # self._P += np.reshape(dP, (self._dim_x, self._dim_x))*self._dt
 
         self._t += self._dt
-        return
 
-def dx_dt(x, t, K, y, dt, model_params):
-    return CorrSimpleModelEKF.fx(x, model_params) + np.dot(K, y) / dt
+    @property
+    def x_est(self):
+        return self._x
+
+    @property
+    def P_est(self):
+        return self._P

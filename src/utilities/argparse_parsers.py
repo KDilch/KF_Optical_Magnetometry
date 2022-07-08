@@ -3,6 +3,7 @@ import argparse
 from run_tests import run__test
 from run_magnetometer import run__magnetometer
 from run_magnetometer_statistics import run__magnetometer_statistics
+from run_magnetometer_integrated import run__magnetometer_integrated
 from analyze_magnetometer_statistics import analyze__magnetometer_statistics
 from run_magnetometer_corr import run__magnetometer_corr
 from run_10x10 import run__10x10_corr
@@ -47,6 +48,35 @@ def initialize_parsers():
                                    help='A string representing a method used to solve SDEs.',
                                    default='default')
     simulation_parser.set_defaults(func=run__magnetometer)
+    # RUN MAGNETOMETER INTEGRATED=========================================================================================
+    simulation_parser = subparsers.add_parser('run-magnetometer-int', help='Run atomic sensor simulation with the integrated model')
+    simulation_parser.add_argument('-o',
+                                   '--output_path',
+                                   action='store',
+                                   help='A string representing path where the output should be saved.',
+                                   default='./')
+    simulation_parser.add_argument('--config',
+                                   action='store',
+                                   help='A string representing a module name of a config file. Config is a python file.',
+                                   default='config')
+
+    simulation_parser.add_argument('--ekf',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save plots',
+                                   default=False)
+    simulation_parser.add_argument('--save_data',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save the data in a file',
+                                   default=False)
+    simulation_parser.add_argument('--save_plots',
+                                   action='store_true',
+                                   help='Bool specifying if you want to save the data in a file',
+                                   default=False)
+    simulation_parser.add_argument('--method',
+                                   action='store',
+                                   help='A string representing a method used to solve SDEs.',
+                                   default='default')
+    simulation_parser.set_defaults(func=run__magnetometer_integrated)
     # RUN STATISTICS=========================================================================================
     simulation_parser_stat = subparsers.add_parser('run-magnetometer-statistics',
                                                    help='Run atomic sensor simulation with reps')

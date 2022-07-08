@@ -26,11 +26,11 @@ class EKF(object):
         self._R_inv = np.linalg.inv(self._R)
 
     @staticmethod
-    def F(x, model_params):
+    def F(x, t, model_params):
         raise NotImplementedError('Implement F function.')
 
     @staticmethod
-    def fx(x_0, model_params):
+    def fx(x_0, t, model_params):
         raise NotImplementedError('Implement fx function.')
 
     def predict_update(self, dz):

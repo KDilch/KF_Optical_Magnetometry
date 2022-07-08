@@ -3,8 +3,8 @@ import numpy as np
 config = SimpleNamespace()
 
 config.simulation = {
-    't_max':  10.,
-    'dt': 0.00001,
+    't_max':  15.,
+    'dt': 0.0001,
     'dim_measurement': 1,
     'decoherence_x': 0.0,
     'decoherence_y': 0.0,
@@ -13,24 +13,24 @@ config.simulation = {
     't_0': 0,
     'noise': {'Q_jx': 0.01,
               'Q_jy': 0.01,
-              'Q_freq': 0.0},
+              'Q_freq': 0.},
     'measurement': {'measurement_strength': 1.,
                     'H': np.array([[0., 1., 0.]]),
-                    'noise': {'R': 0.001,
+                    'noise': {'R': 0.01,
                               'mean': 0.0}
                     }
 }
 
 config.filter_ekf = {
-    'dt': 0.00005,
+    'dt': 0.0001,
     'decoherence_x': 0.0,
     'decoherence_y': 0.0,
     'frequency_decay_rate': 0.0,
     'x_0': np.array([5.0, 0.0, 1.1]),
     't_0': 0.,
-    'P0': np.array([[0.0, 0., 0.],
-                    [0., 0.0, 0.],
-                    [0., 0., 0.01]]),
+    'P0': np.array([[0.01, 0., 0.],
+                    [0., 0.01, 0.],
+                    [0., 0., 0.1]]),
     'noise': {'Q': np.array([[0.01, 0., 0.],
                              [0., 0.01, 0.],
                              [0., 0., 0.0]]),
@@ -38,5 +38,5 @@ config.filter_ekf = {
     'measurement': {'measurement_strength': 1.,
                     'H': np.array([[0., 1., 0.]]),
                     'dim_z': 1,
-                    'R': np.array([[0.001]])}
+                    'R': np.array([[0.01]])}
 }

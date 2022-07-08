@@ -60,6 +60,11 @@ class Simple_CC_Correlated_Sensor_Model(Model):
                           0.0])
         return dx_dt
 
+    @staticmethod
+    def dx_dt(x, t, params):
+        dx_dt = Simple_CC_Correlated_Sensor_Model.fx(x, t, params)
+        return dx_dt
+
     def hx(self):
         return self._params.measurement.measurement_strength * self._H.dot(self._x)
 
