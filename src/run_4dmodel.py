@@ -6,16 +6,15 @@ from copy import deepcopy
 from munch import DefaultMunch
 import tqdm
 import os
-import json
 
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
-from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
+from kalman_filter.continuous.simple_model_ekf_improved import MagnetometerEKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 
 
-def run__magnetometer(*args):
+def run__magnetometer4d(*args):
     # Logger for storing errors and logs in separate file, creates separate folder
     logger = logging.getLogger(__name__)
     logger.info('Starting execution of run-frequency-extractor command.')
@@ -59,15 +58,12 @@ def run__magnetometer(*args):
                                                         simulation_params=simulation_params)
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
     from kalman_filter.continuous.simple_model_ukf import SimpleMagnetometerUKF
-    ukf = SimpleMagnetometerUKF(model_params=filter_params_ekf)
 
     # ALLOCATE MEMORY FOR THE ARRAYS=====================================================
-    xs = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
+    xs = np.array([np.zeros_like(simulation_params.x_0) for _ in time_arr])
     z_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
     x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
     P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
-    x_ukf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
-    P_ukf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
     measure_every_nth = np.floor_divide(filter_params_ekf.dt, simulation_params.dt)
     # RUN THE SIMULATION, PERFORM THE MEASUREMENT AND FILTER
@@ -78,32 +74,19 @@ def run__magnetometer(*args):
         # KALMAN FILTER===========================================
         if args[0].ekf and perform_ekf:
             ekf.predict_update(z_s[index])
-            ukf.ukf.predict(model_params=ukf.model_params)
-            ukf.ukf.update(z_s[index], H=ukf.H)
             x_ekf_est[index] = ekf.x_est
             P_ekf_est[index] = ekf.P_est
-            x_ukf_est[index] = ukf.ukf.x
-            P_ukf_est[index] = ukf.ukf.P
+
     if args[0].ekf:
-        df = prepare_df(time_arr, xs, z_s, xs_est=x_ekf_est, P_est=P_ekf_est)
-        df_ukf = prepare_df(time_arr, xs, z_s, xs_est=x_ukf_est, P_est=P_ukf_est)
+        df = prepare_df(time_arr, xs, xs_est=x_ekf_est, P_est=P_ekf_est)
     else:
-        df = prepare_df(time_arr, xs, z_s)
+        df = prepare_df(time_arr, xs)
 
     if args[0].save_data:
         save_data_simple_simulation(df, simulation_params, args[0].output_path+'/csv')
     if args[0].save_plots:
         plot_simple_model(df,
                           dir_name=args[0].output_path+'/plots',
-                          params=simulation_params,
-                          simulation=True,
-                          ekf=args[0].ekf,
-                          err=args[0].ekf,
-                          err_loglog=args[0].ekf,
-                          show=False,
-                          save=True)
-        plot_simple_model(df_ukf,
-                          dir_name=args[0].output_path + '/plots_ukf',
                           params=simulation_params,
                           simulation=True,
                           ekf=args[0].ekf,

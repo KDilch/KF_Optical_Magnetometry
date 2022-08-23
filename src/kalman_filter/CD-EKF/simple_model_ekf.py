@@ -12,15 +12,15 @@ class SimpleModelEKF(EKF):
 
     @staticmethod
     def F(x, model_params):
-        return np.array([[-model_params.decoherence_x, x[2], x[1]],
-                         [-x[2], -model_params.decoherence_y, -x[0]],
+        return np.array([[-(1/model_params.T2), x[2], x[1]],
+                         [-x[2], -(1/model_params.T2), -x[0]],
                          [0.0, 0.0, 0.0]])
 
     @staticmethod
     def fx(x_0, model_params):
         x = np.zeros(3)
-        x[0] += - model_params.decoherence_x * x_0[0] + x_0[1] * x_0[2]
-        x[1] += - model_params.decoherence_y * x_0[1] - x_0[0] * x_0[2]
+        x[0] += - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        x[1] += - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2]
         x[2] += 0
         return x
 

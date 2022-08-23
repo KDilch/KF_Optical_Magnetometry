@@ -13,6 +13,7 @@ from multiprocessing import Pool
 from utilities.config_util import import_config_from_path
 from run_magnetometer import run__magnetometer
 from run_magnetometer_corr import run__magnetometer_corr
+from run_4dmodel import run__magnetometer4d
 
 
 def run__magnetometer_statistics(*args):
@@ -44,3 +45,8 @@ def run__magnetometer_statistics(*args):
         pool = Pool(10)
         with pool:
             pool.starmap(run__magnetometer_corr, args_list)
+
+    elif args[0].simulation_type == '4d':
+        pool = Pool(10)
+        with pool:
+            pool.starmap(run__magnetometer4d, args_list)

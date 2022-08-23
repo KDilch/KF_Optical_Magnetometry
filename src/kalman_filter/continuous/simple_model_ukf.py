@@ -17,8 +17,8 @@ class SimpleMagnetometerUKF(object):
     @staticmethod
     def fx(x, dt, model_params):
         x = np.zeros(3)
-        x[0] += - model_params.decoherence_x * x[0] + x[1] * x[2]
-        x[1] += - model_params.decoherence_y * x[1] - x[0] * x[2]
+        x[0] += - (1/model_params.T2) * x[0] + x[1] * x[2]
+        x[1] += - (1/model_params.T2) * x[1] - x[0] * x[2]
         x[2] += 0
         return x
 

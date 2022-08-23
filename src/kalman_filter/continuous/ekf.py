@@ -18,11 +18,11 @@ class EKF(object):
         self._R = model_params.measurement.R
         self._Q = model_params.noise.Q
         self._P = model_params.P0
-        self._y = np.zeros((self._dim_z, 1))  # residual
+        self._y = np.zeros(self._dim_z)  # residual
 
         self._dz = np.array([model_params.x_0[1]] * self._dim_z)
 
-        self._K = np.zeros(self._x.shape)  # kalman gain
+        self._K = np.zeros(shape=(self._x.shape[0], 1))  # kalman gain
         self._R_inv = np.linalg.inv(self._R)
 
     @staticmethod
@@ -38,8 +38,8 @@ class EKF(object):
         self._K = np.dot(np.dot(self._P, self._H.T), self._R_inv)
         self._y = dz - self._measurement_strength*np.dot(self._H, self._x)*self._dt
         # self._x = odeint(dx_dt, self._x, np.linspace(self._t, self._t+self._dt, 20), args=(self,))[-1, :]
-        dx = self.fx(self._x)*self._dt + np.dot(self._K, self._y)
-        dP = np.dot(self.F(self._x), self._P)*self._dt+np.dot(self._P, np.transpose(self.F(self._x)))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
+        dx = self.fx(self._x, self._t)*self._dt + np.dot(self._K, self._y)
+        dP = np.dot(self.F(self._x, self._t), self._P)*self._dt+np.dot(self._P, np.transpose(self.F(self._x)))*self._dt-np.dot(np.dot(self._K, self._H), self._P)*self._dt + self._Q*self._dt
         self._x += dx
         self._P += dP
         self._t += self._dt

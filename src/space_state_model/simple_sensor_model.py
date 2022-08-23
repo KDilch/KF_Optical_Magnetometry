@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
-from scipy.integrate import odeint
+from scipy.integrate import solve_ivp
 import numpy as np
 
 from space_state_model.model import Model
@@ -20,43 +20,73 @@ class Simple_CC_Sensor_Model(Model):
     def step(self, method="default"):
         self._t += self._dt
         self._logger.debug('Performing a step for time %r' % str(self._t))
-        if method == 'odeint':
-            x = odeint(Simple_CC_Sensor_Model.dx_dt, self._x,
-                       np.linspace(self._t, self._t + self._dt, 10),
-                       args=(self._params.decoherence_x,
-                             self._params.decoherence_y,
-                             self.get_intrinsic_noise()))[-1, :]
-            self._x = x
-
         if (method == 'default') or (method == 'naive'):
-            dx = np.array([- self._params.decoherence_x * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt,
-                           -self._params.decoherence_y * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt,
+            # this is just Euler-Mayurama method without any mid-steps
+            dx = np.array([- (1/self._params.T2) * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt,
+                           -(1/self._params.T2) * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt,
                            0.0])
             self._x += dx + self.get_intrinsic_noise()
+        elif method == "ito_Euler_Mayurama":
+            for i in range(10):
+                dt_EM = self._dt/10
+                dx = np.array([- (1/self._params.T2) * self._x[0] * dt_EM + self._x[1] * self._x[2] * dt_EM,
+                               -(1/self._params.T2) * self._x[1] * dt_EM - self._x[0] * self._x[2] * dt_EM,
+                               0.0])
+                self._intrinsic_noise = self.get_intrinsic_noise(dt=dt_EM)
+                self._x += dx + self._intrinsic_noise
+        elif method == "ito_Runge_Kutta":
+            for i in range(10):
+                dt = self._dt/10
+                a = np.array([- (1/self._params.T2) * self._x[0] + self._x[1] * self._x[2],
+                               -(1/self._params.T2) * self._x[1] - self._x[0] * self._x[2],
+                               0.0])
+                y = self._x
+                self._intrinsic_noise = self.get_intrinsic_noise(dt=dt) #bdW
+                x = y + self._intrinsic_noise + a*dt + 0 #since there is no drift
+                self._x = x
+        else:
+            x = solve_ivp(Simple_CC_Sensor_Model.dx_dt,
+                          [self._t, self._t + self._dt],
+                          self._x,
+                       method=method,
+                          dense_output=True,
+                       args=((1/self._params.T2),
+                             (1/self._params.T2),
+                             self.get_intrinsic_noise()))
+            self._x = x.sol(self._t+self._dt)
         self.read_sensor()
         return self._x, self._z
 
     def read_sensor(self, noise=None):
+        #TODO this function should be updated for the CD model
         self._z = self.hx() * self._dt + self.get_measurement_noise()
         return
 
     @staticmethod
-    def dx_dt(x, t, decoherence_x, decoherence_y, intrinsic_noise):
+    def dx_dt(t, x, decoherence_x, decoherence_y, intrinsic_noise):
         dx_dt = np.array([- decoherence_x * x[0] + x[1] * x[2],
                           - decoherence_y * x[1] - x[0] * x[2],
                           0.0])
         dx_dt += intrinsic_noise
         return dx_dt
 
+    @staticmethod
+    def G(x, t):
+        return np.identity(3)
+
     def hx(self):
         return self._params.measurement.measurement_strength * self._H.dot(self._x)
 
-    def get_intrinsic_noise(self):
-        return np.array([np.sqrt(self._params.dt * self._params.noise.Q_jx),
-                         np.sqrt(self._params.dt * self._params.noise.Q_jy),
-                         np.sqrt(self._params.dt * self._params.noise.Q_freq)]) * np.random.randn(self._dim_x)
+    def get_intrinsic_noise(self, dt=None):
+        self._dW = np.random.randn(self._dim_x)
+        if not dt:
+            return np.array([np.sqrt(self._params.dt * self._params.noise.Q_jx),
+                             np.sqrt(self._params.dt * self._params.noise.Q_jy),
+                             np.sqrt(self._params.dt * self._params.noise.Q_freq)]) * self._dW
+        else:
+            return np.array([np.sqrt(dt * self._params.noise.Q_jx),
+                             np.sqrt(dt * self._params.noise.Q_jy),
+                             np.sqrt(dt * self._params.noise.Q_freq)]) * self._dW
 
     def get_measurement_noise(self):
         return np.array([np.sqrt(self._params.dt * self._params.measurement.noise.R) * np.random.randn()])
-
-

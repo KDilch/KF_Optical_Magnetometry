@@ -31,15 +31,14 @@ class Simple_CC_Correlated_Sensor_Model(Model):
         if method == 'odeint':
             x = odeint(Simple_CC_Correlated_Sensor_Model.dx_dt, self._x,
                        np.linspace(self._t, self._t + self._dt, 20),
-                       args=(self._params.decoherence_x,
-                             self._params.decoherence_y,
+                       args=(self._params.T2,
                              self._dt,
-                             self.get_intrinsic_noise(noise)))[-1, :]
+                             self.get_intrinsic_noise(noise))[-1, :])
             self._x = x
 
         if (method == 'default') or (method == 'naive'):
-            dx = np.array([- self._params.decoherence_x * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt,
-                           -self._params.decoherence_y * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt,
+            dx = np.array([- (1/self._params.T2) * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt,
+                           -(1/self._params.T2) * self._x[1] * self._dt - self._x[0] * self._x[2] * self._dt,
                            0.0])
             self._x += dx + self.get_intrinsic_noise(noise)
 
@@ -55,8 +54,8 @@ class Simple_CC_Correlated_Sensor_Model(Model):
 
     @staticmethod
     def fx(x, t, params):
-        dx_dt = np.array([- params.decoherence_x * x[0] + x[1] * x[2],
-                          - params.decoherence_y * x[1] - x[0] * x[2],
+        dx_dt = np.array([- 1/(params.T2)* x[0] + x[1] * x[2],
+                          - 1/(params.T2) * x[1] - x[0] * x[2],
                           0.0])
         return dx_dt
 

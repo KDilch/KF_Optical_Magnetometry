@@ -141,38 +141,34 @@ def plot_simple_model(df, dir_name, params, simulation=True, ekf=True, err=True,
                       save=True):
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
     if simulation:
-        filename = 'simulation_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'simulation_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                       os.getpid(),
                                                                                       params.x_0[2],
-                                                                                      params.decoherence_x,
-                                                                                      params.decoherence_y,
+                                                                                      params.T2,
                                                                                       params.dt
                                                                                       )
         plot_simulation(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if ekf:
-        filename = 'simulation_ekf_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'simulation_ekf_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                           os.getpid(),
                                                                                           params.x_0[2],
-                                                                                          params.decoherence_x,
-                                                                                          params.decoherence_y,
+                                                                                          params.T2,
                                                                                           params.dt
                                                                                           )
         plot_simulation_and_ekf(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if err:
-        filename = 'err_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'err_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                os.getpid(),
                                                                                params.x_0[2],
-                                                                               params.decoherence_x,
-                                                                               params.decoherence_y,
+                                                                               params.T2,
                                                                                params.dt
                                                                                )
         plot_err_ekf(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if err_loglog:
-        filename = 'err_loglog_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'err_loglog_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                       os.getpid(),
                                                                                       params.x_0[2],
-                                                                                      params.decoherence_x,
-                                                                                      params.decoherence_y,
+                                                                      params.T2,
                                                                                       params.dt
                                                                                       )
         plot_err_ekf_loglog(df, dir_name=dir_name, show=show, save=save, filename=filename)

@@ -10,17 +10,17 @@ def save_data_simple_simulation(df, params, dir_name):
         os.makedirs(dir_name)
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
 
-    df.to_csv(os.path.join(dir_name, '%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.csv' % (date,
+    df.to_csv(os.path.join(dir_name, '%s_pid_%r_omega_%r_T2_%r_dt_%r.csv' % (date,
                                                                                              os.getpid(),
                                                                                              params.x_0[2],
-                                                                                             params.decoherence_x,
-                                                                                             params.decoherence_y,
+                                                                                             params.T2,
                                                                                              params.dt
                                                                                              )))
 
 
-def prepare_df(time_arr, xs, xs_est=None, P_est=None):
+def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None):
     df = pd.DataFrame({'time': time_arr,
+                       'zs': zs,
                        'x0s': xs[:, 0],
                        'x1s': xs[:, 1],
                        'x2s': xs[:, 2]
