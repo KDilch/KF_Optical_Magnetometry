@@ -111,6 +111,8 @@ def plot_err_ekf(df, show=False, save=True, dir_name='./', filename='2.png'):
 
 def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.png'):
     fig, axs = plt.subplots(3, 1)
+    def scaling_from_mathematica(t):
+        return 4*0.01/(t*100*10)
     axs[0].loglog(df['time'], df['x0_err_cov'])
     axs[0].loglog(df['time'], df['mse_x0'])
     axs[0].set_xlabel('time')
@@ -125,6 +127,8 @@ def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.pn
 
     axs[2].loglog(df['time'], df['x2_err_cov'])
     axs[2].loglog(df['time'], df['mse_x2'])
+    axs[2].loglog(df['time'],  scaling_from_mathematica(df['time']))
+
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('frequency')
     axs[2].grid(True)

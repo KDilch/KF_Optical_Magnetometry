@@ -12,17 +12,17 @@ class MagnetometerEKF(EKF):
 
     @staticmethod
     def F(x, t, model_params):
-        return np.array([[-1/(model_params.T2), x[2], x[1]],
-                         [-x[2], -1/model_params.T2, -x[0]],
+        return np.array([[-1./(model_params.T2), x[2], x[1]],
+                         [-x[2], -1./model_params.T2, -x[0]],
                          [0.0, 0.0, 0.0]])
 
     @staticmethod
     def fx(x_0, t, model_params):
-        x = np.zeros(3)
-        x[0] = - 1/model_params.T2 * x_0[0] + x_0[1] * x_0[2]
-        x[1] = - 1/model_params.T2 * x_0[1] - x_0[0] * x_0[2]
-        x[2] = 0
-        return x
+        dx_dt = np.zeros(3)
+        dx_dt[0] = - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        dx_dt[1] = - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2]
+        dx_dt[2] = 0
+        return dx_dt
 
     @staticmethod
     def dx_dt(t, x, K, y, dt, model_params):
@@ -65,16 +65,16 @@ class MagnetometerEKF(EKF):
         x = x_sol.sol(self._t + self._dt)
         self._x = x
         self._P = np.reshape(P, (self._dim_x, self._dim_x))
-        # self._P += np.reshape(MagnetometerEKF.dP_dt(np.reshape(self._P, self._dim_x ** 2),
-        #                                  self._t + self._dt,
+        # self._P += np.reshape(MagnetometerEKF.dP_dt(self._t + self._dt,
+        #                                             np.reshape(self._P, self._dim_x ** 2),
         #                                  self._x,
         #                                  self._K,
         #                                  self._H,
         #                                  self._Q,
         #                                  self._dim_x,
         #                                  self.model_params), (self._dim_x, self._dim_x))*self._dt
-        # self._x += MagnetometerEKF.dx_dt(self._x,
-        #                                  self._t+self._dt,
+        # self._x += MagnetometerEKF.dx_dt(self._t+self._dt,
+        #                                  self._x,
         #                                  self._K,
         #                                  self._y,
         #                                  self._dt,
