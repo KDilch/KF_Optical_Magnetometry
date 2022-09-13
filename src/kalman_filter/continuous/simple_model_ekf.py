@@ -35,11 +35,11 @@ class MagnetometerEKF(EKF):
                                                                          np.transpose(MagnetometerEKF.F(x,
                                                                                                         t,
                                                                                                         model_params))) - np.dot(
-            np.dot(K, H), np.reshape(P, (dim_x, dim_x))) + Q, dim_x ** 2)
+            np.dot(K, H*model_params.measurement.measurement_strength), np.reshape(P, (dim_x, dim_x))) + Q, dim_x ** 2)
 
     def predict_update(self, dz):
         self._dz = copy.deepcopy(dz)
-        self._K = np.dot(np.dot(self._P, self._H.T), self._R_inv)
+        self._K = np.dot(np.dot(self._P, self._measurement_strength*self._H.T), self._R_inv)
         self._y = dz - self._measurement_strength * np.dot(self._H, self._x) * self._dt
         P_sol = solve_ivp(MagnetometerEKF.dP_dt,
                       [self._t, self._t + self._dt],
