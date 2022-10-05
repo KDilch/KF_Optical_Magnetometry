@@ -111,6 +111,8 @@ def plot_err_ekf(df, show=False, save=True, dir_name='./', filename='2.png'):
 
 def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.png'):
     fig, axs = plt.subplots(3, 1)
+    def scaling_from_mathematica(t):
+        return 4*0.01/(t*100*10)
     axs[0].loglog(df['time'], df['x0_err_cov'])
     axs[0].loglog(df['time'], df['mse_x0'])
     axs[0].set_xlabel('time')
@@ -125,6 +127,8 @@ def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.pn
 
     axs[2].loglog(df['time'], df['x2_err_cov'])
     axs[2].loglog(df['time'], df['mse_x2'])
+    axs[2].loglog(df['time'],  scaling_from_mathematica(df['time']))
+
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('frequency')
     axs[2].grid(True)
@@ -141,38 +145,34 @@ def plot_simple_model(df, dir_name, params, simulation=True, ekf=True, err=True,
                       save=True):
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
     if simulation:
-        filename = 'simulation_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'simulation_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                       os.getpid(),
                                                                                       params.x_0[2],
-                                                                                      params.decoherence_x,
-                                                                                      params.decoherence_y,
+                                                                                      params.T2,
                                                                                       params.dt
                                                                                       )
         plot_simulation(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if ekf:
-        filename = 'simulation_ekf_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'simulation_ekf_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                           os.getpid(),
                                                                                           params.x_0[2],
-                                                                                          params.decoherence_x,
-                                                                                          params.decoherence_y,
+                                                                                          params.T2,
                                                                                           params.dt
                                                                                           )
         plot_simulation_and_ekf(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if err:
-        filename = 'err_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'err_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                os.getpid(),
                                                                                params.x_0[2],
-                                                                               params.decoherence_x,
-                                                                               params.decoherence_y,
+                                                                               params.T2,
                                                                                params.dt
                                                                                )
         plot_err_ekf(df, dir_name=dir_name, show=show, save=save, filename=filename)
     if err_loglog:
-        filename = 'err_loglog_%s_pid_%r_omega_%r_decoherence_x_y_%r_%r_dt_%r.png' % (date,
+        filename = 'err_loglog_%s_pid_%r_omega_%r_T2_%r_dt_%r.png' % (date,
                                                                                       os.getpid(),
                                                                                       params.x_0[2],
-                                                                                      params.decoherence_x,
-                                                                                      params.decoherence_y,
+                                                                      params.T2,
                                                                                       params.dt
                                                                                       )
         plot_err_ekf_loglog(df, dir_name=dir_name, show=show, save=save, filename=filename)
