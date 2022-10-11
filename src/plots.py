@@ -112,14 +112,14 @@ def plot_err_ekf(df, show=False, save=True, dir_name='./', filename='2.png'):
 def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.png'):
     fig, axs = plt.subplots(3, 1)
     def scaling_from_mathematica(t):
-        return 4*0.01/(t*100*10)
+        return 4*0.001/(t*8700*10**12)
     axs[0].loglog(df['time'], df['x0_err_cov'])
     axs[0].loglog(df['time'], df['mse_x0'])
     axs[0].set_xlabel('time')
     axs[0].set_ylabel('mse Jx')
     axs[0].grid(True)
 
-    axs[1].loglog(df['time'], df['x1_err_cov'])
+    axs[1].loglog(df['time'],df['x1_err_cov'])
     axs[1].loglog(df['time'], df['mse_x1'])
     axs[1].set_xlabel('time')
     axs[1].set_ylabel('mse Jy')
