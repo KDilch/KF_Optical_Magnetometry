@@ -7,7 +7,7 @@ qy = 0.002
 T2 = 870.  # in microseconds
 dt = 0.001
 measurement_strength = 1. #3.5*10**(-4)
-R = 0.1  #96.
+R = 0.1  # 96.
 omega_L = 0.62  # in GHz
 config.simulation = {
     't_max':  500.,
