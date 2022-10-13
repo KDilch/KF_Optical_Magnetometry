@@ -2,6 +2,7 @@ from types import SimpleNamespace
 import numpy as np
 config = SimpleNamespace()
 numAtoms = 10.
+qx = 0.002
 qy = 0.002
 T2 = 870.  # in microseconds
 dt = 0.001
