@@ -4,14 +4,13 @@ config = SimpleNamespace()
 numAtoms = 10**12
 qx = 0.002
 qy = 0.002
-T2 = 0.087  # in s x100
-dt = 0.000001
-measurement_strength = 3.5*10**(-1)  #x1000
+T2 = 0.87  # in s x1000
+dt = 0.0000001
+measurement_strength = 3.5*10**(-4)
 R = 96.
-omega_L = 62000.0  # in Hz
-
+omega_L = 62.0  # in Hz /1000
 config.simulation = {
-    't_max':  0.001,
+    't_max':  1.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
