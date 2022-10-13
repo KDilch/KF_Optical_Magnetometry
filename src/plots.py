@@ -115,19 +115,24 @@ def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.pn
         return 4*0.001/(t*8700*10**12)
     axs[0].loglog(df['time'], df['x0_err_cov'])
     axs[0].loglog(df['time'], df['mse_x0'])
+    axs[0].loglog(df['time'], df['ss_x0'], ':')
     axs[0].set_xlabel('time')
     axs[0].set_ylabel('mse Jx')
     axs[0].grid(True)
 
     axs[1].loglog(df['time'],df['x1_err_cov'])
     axs[1].loglog(df['time'], df['mse_x1'])
+    axs[1].loglog(df['time'], df['ss_x1'], ":")
+
     axs[1].set_xlabel('time')
     axs[1].set_ylabel('mse Jy')
     axs[1].grid(True)
 
     axs[2].loglog(df['time'], df['x2_err_cov'])
     axs[2].loglog(df['time'], df['mse_x2'])
-    axs[2].loglog(df['time'],  scaling_from_mathematica(df['time']))
+    axs[2].loglog(df['time'], df['ss_x2'], ":")
+
+    # axs[2].loglog(df['time'],  scaling_from_mathematica(df['time']))
 
     axs[2].set_xlabel('time')
     axs[2].set_ylabel('frequency')

@@ -66,6 +66,7 @@ def run__magnetometer(*args):
     z_s = np.array([np.zeros_like(simulation_params.measurement.noise.mean) for _ in time_arr])
     x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
     P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
+    P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
     # x_ukf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
     # P_ukf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
@@ -82,10 +83,11 @@ def run__magnetometer(*args):
             # ukf.ukf.update(z_s[index], H=ukf.H)
             x_ekf_est[index] = ekf.x_est
             P_ekf_est[index] = ekf.P_est
+            P_ss[index] = ekf.steady_cov
             # x_ukf_est[index] = ukf.ukf.x
             # P_ukf_est[index] = ukf.ukf.P
     if args[0].ekf:
-        df = prepare_df(time_arr, xs, z_s, xs_est=x_ekf_est, P_est=P_ekf_est)
+        df = prepare_df(time_arr, xs, z_s, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss)
         # df_ukf = prepare_df(time_arr, xs, z_s, xs_est=x_ukf_est, P_est=P_ukf_est)
     else:
         df = prepare_df(time_arr, xs, z_s)
