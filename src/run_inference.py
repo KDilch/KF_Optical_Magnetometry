@@ -4,8 +4,9 @@ import logging
 import os
 import glob
 import dask.dataframe as dd
-from utilities.save_data import prepare_avg_ddf, save_data_avg_simple_simulation
-from plots import plot_simple_model_avg
+from munch import DefaultMunch
+from copy import deepcopy
+from utilities.config_util import import_config_from_path
 
 
 def run__magnetometer_inference(*args):
@@ -14,6 +15,8 @@ def run__magnetometer_inference(*args):
     logger.info('Starting execution of analyze-magnetometer-statistics command.')
     data_path = os.path.join(args[0].data_path, '*.csv')
     ddf = dd.read_csv(data_path)
+    config = import_config_from_path(args[0].config)
+    filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
     if args[0].cc_ekf:
         pass
     if args[0].cd_ekf:
