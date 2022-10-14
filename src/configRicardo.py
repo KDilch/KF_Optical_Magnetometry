@@ -10,7 +10,7 @@ measurement_strength = 3.5*10**(-4)
 R = 96.
 omega_L = 62.0  # in Hz /1000
 config.simulation = {
-    't_max':  1.,
+    't_max':  3.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
