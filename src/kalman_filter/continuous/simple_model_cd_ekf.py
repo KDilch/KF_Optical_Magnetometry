@@ -14,6 +14,7 @@ class CD_EKF(EKF):
 
     @staticmethod
     def F(x, t, model_params):
+        # Jacobian
         return np.array([[-1/(model_params.T2), x[2], x[1]],
                          [-x[2], -1/(model_params.T2), -x[0]],
                          [0.0, 0.0, 0.0]])
@@ -86,9 +87,10 @@ class CD_EKF(EKF):
         Phi_0 = np.reshape(np.identity(self._dim_x), self._dim_x ** 2)  # initial Phi_delta is identity
 
         def dPhidt(Phi, t):
-            return np.reshape(np.dot(self.F(self._x, t, self.model_params), np.reshape(Phi, (self._dim_x, self._dim_x))), self._dim_x**2)
+            return np.reshape(np.dot(self.F(self._x, t, self.model_params), np.reshape(Phi, (self._dim_x, self._dim_x))),
+                              self._dim_x**2)
 
-        t = np.linspace(t_0, t_0 + self._dt, num=num_terms)  # times to report solution
+        t = np.linspace(t_0, t_0 + self._dt, num=num_terms)  # number of mid-steps
         Phi_deltas, _ = odeint(dPhidt, np.reshape(Phi_0, self._dim_x**2), t, full_output=True)
         # Numerical
         Phi_s_matrix_form = [np.reshape(Phi_deltas[i], (self._dim_x, self._dim_x)) for i in range(len(Phi_deltas))]

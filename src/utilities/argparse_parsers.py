@@ -9,7 +9,7 @@ from run_cd_ekf import run__magnetometer_cd
 from analyze_magnetometer_statistics import analyze__magnetometer_statistics
 from run_magnetometer_corr import run__magnetometer_corr
 from run_10x10 import run__10x10_corr
-
+from run_inference import run__magnetometer_inference
 
 def initialize_parsers():
     # create the top-level parser
@@ -262,5 +262,39 @@ def initialize_parsers():
                                         help='A string representing a method used to solve SDEs.',
                                         default='default')
     simulation_parser_10x10corr.set_defaults(func=run__10x10_corr)
+
+    # RUN INFERENCE=====================================================================================================
+    simulation_parser_inference = subparsers.add_parser('run-inference',
+                                                   help='Run atomic sensor simple model correlated simulation')
+    simulation_parser_inference.add_argument('-o',
+                                        '--output_path',
+                                        action='store',
+                                        help='A string representing path where the output should be saved.',
+                                        default='./')
+    simulation_parser_inference.add_argument('--config',
+                                        action='store',
+                                        help='A string representing a module name of a config file. Config is a python file.',
+                                        default='config')
+    simulation_parser_inference.add_argument('--cc_ekf',
+                                        action='store_true',
+                                        help='Bool specifying if you want to run continuous-continuous kalman filter.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--cd_ekf',
+                                        action='store_true',
+                                        help='Bool specifying if you want to run continuous-discrete kalman filter.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--save_data',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data files.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--save_plots',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the plots.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--method',
+                                        action='store',
+                                        help='A string representing a method used to solve SDEs. Default is Euler-Muyurama.',
+                                        default='default')
+    simulation_parser_inference.set_defaults(func=run__magnetometer_inference)
 
     return parser
