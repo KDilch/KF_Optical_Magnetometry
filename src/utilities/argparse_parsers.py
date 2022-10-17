@@ -210,6 +210,7 @@ def initialize_parsers():
                                         action='store',
                                         help='A string representing path where the output should be saved.',
                                         default='./')
+
     simulation_parser_corr.add_argument('--config',
                                         action='store',
                                         help='A string representing a module name of a config file. Config is a python file.',
@@ -270,6 +271,10 @@ def initialize_parsers():
                                         '--output_path',
                                         action='store',
                                         help='A string representing path where the output should be saved.',
+                                        default='./')
+    simulation_parser_inference.add_argument('--data_path',
+                                        action='store',
+                                        help='A string representing a module name of a data file. Data file is a csv file.',
                                         default='./')
     simulation_parser_inference.add_argument('--config',
                                         action='store',
