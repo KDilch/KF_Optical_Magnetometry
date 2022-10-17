@@ -40,9 +40,9 @@ class CD_EKF(EKF):
                                                                                                model_params))) + Q, dim_x ** 2)
 
     def predict(self, method='default'):
-        if method == 'default' or method == 'odeint':
+        if method == 'odeint':
             self.__predict_odeint()
-        elif method == 'Q_delta':
+        elif method == 'Q_delta' or method == 'default':
             self.__predict_Q_delta()
         return
 
