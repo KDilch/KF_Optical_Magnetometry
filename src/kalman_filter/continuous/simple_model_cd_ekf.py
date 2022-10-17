@@ -61,6 +61,7 @@ class CD_EKF(EKF):
                    args=(self._dim_x, self.model_params))[-1, :]
         self._P = np.reshape(P, (self._dim_x, self._dim_x))
         self._x = x
+        self._t += self._dt
         return
 
     def __predict_Q_delta(self):
@@ -71,7 +72,7 @@ class CD_EKF(EKF):
 
     def update(self, z):
         self._z = z
-        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x) # innovation
+        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x)# innovation
         PHT = np.dot(self._P, self._H.T)
         # S = HPH' + R
         S = np.dot(self._H, PHT) + self._R

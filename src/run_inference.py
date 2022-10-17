@@ -71,14 +71,12 @@ def run__magnetometer_inference(*args):
         index_ekf = 0
         for index, el in enumerate(tqdm.tqdm(ddf.iterrows(), desc='pid:%r' % os.getpid())):
             if index % every_nth_z == 0:
-                ekf.predict_update(el[1]['zs'])
+                ekf.predict_update(el[1]['zs']/simulation_params.dt)
                 x_ekf_est[index_ekf] = ekf.x_est
                 P_ekf_est[index_ekf] = ekf.P_est
                 x_filter_freq[index_ekf] = np.array([el[1]['x0s'], el[1]['x1s'], el[1]['x2s']])
                 z_filter_freq[index_ekf] = el[1]['zs']
                 index_ekf += 1
-
-
 
         df = prepare_df(time_arr_ekf, xs=x_filter_freq, zs=z_filter_freq, xs_est=x_ekf_est, P_est=P_ekf_est)
         if args[0].save_data:
@@ -93,8 +91,4 @@ def run__magnetometer_inference(*args):
                               err_loglog=args[0].cd_ekf,
                               show=False,
                               save=True)
-    if args[0].save_data:
-        pass
-    if args[0].save_plots:
-        pass
 
