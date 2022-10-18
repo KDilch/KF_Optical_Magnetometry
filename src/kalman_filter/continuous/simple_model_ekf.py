@@ -50,7 +50,7 @@ class MagnetometerEKF(EKF):
                                                                                                         model_params))) - np.dot(
             np.dot(K, H*model_params.measurement.measurement_strength), np.reshape(P, (dim_x, dim_x))) + Q, dim_x ** 2)
 
-    def predict_update(self, dz):
+    def predict_update(self, dz, compute_ss=False):
         self._dz = copy.deepcopy(dz)
         self._K = np.dot(np.dot(self._P, self._measurement_strength*self._H.T), self._R_inv)
         self._y = dz - self._measurement_strength * np.dot(self._H, self._x) * self._dt
@@ -78,20 +78,7 @@ class MagnetometerEKF(EKF):
         x = x_sol.sol(self._t + self._dt)
         self._x = x
         self._P = np.reshape(P, (self._dim_x, self._dim_x))
-        # self._P += np.reshape(MagnetometerEKF.dP_dt(self._t + self._dt,
-        #                                             np.reshape(self._P, self._dim_x ** 2),
-        #                                  self._x,
-        #                                  self._K,
-        #                                  self._H,
-        #                                  self._Q,
-        #                                  self._dim_x,
-        #                                  self.model_params), (self._dim_x, self._dim_x))*self._dt
-        # self._x += MagnetometerEKF.dx_dt(self._t+self._dt,
-        #                                  self._x,
-        #                                  self._K,
-        #                                  self._y,
-        #                                  self._dt,
-        #                                  self.model_params)*self._dt
-        self._steady_cov = self.steady_state()
+        if compute_ss:
+            self._steady_cov = self.steady_state()
         self._t += self._dt
         return

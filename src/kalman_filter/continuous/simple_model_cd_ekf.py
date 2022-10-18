@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.integrate import solve_ivp, simps, odeint
+from scipy.linalg import solve_discrete_are
+
 from kalman_filter.continuous.ekf import EKF
 
 
@@ -29,14 +31,6 @@ class CD_EKF(EKF):
     @staticmethod
     def dx_dt(t, x, dim_x, model_params):
         return CD_EKF.fx(x, t, model_params)
-
-    @staticmethod
-    def dP_dt(P, t, x, Q, dim_x, model_params):
-        return np.reshape(np.dot(CD_EKF.F(x, t, model_params),
-                                 np.reshape(P, (dim_x, dim_x))) + np.dot(np.reshape(P, (dim_x, dim_x)),
-                                                                         np.transpose(CD_EKF.F(x,
-                                                                                               t,
-                                                                                               model_params))) + Q, dim_x ** 2)
 
     def predict(self):
         self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=20)
@@ -73,7 +67,6 @@ class CD_EKF(EKF):
 
         t = np.linspace(t_0, t_0 + self._dt, num=num_terms)  # number of mid-steps
         Phi_deltas, _ = odeint(dPhidt, np.reshape(Phi_0, self._dim_x**2), t, full_output=True)
-        # Numerical
         Phi_s_matrix_form = [np.reshape(Phi_deltas[i], (self._dim_x, self._dim_x)) for i in range(len(Phi_deltas))]
         Phi_s_transpose_matrix_form = [np.transpose(a) for a in Phi_s_matrix_form]
         integrands = np.array([np.dot(np.dot(a, self._Q), b) for a, b in zip(Phi_s_matrix_form, Phi_s_transpose_matrix_form)])
@@ -82,8 +75,13 @@ class CD_EKF(EKF):
         self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
         self._Phi_delta = np.reshape(Phi_deltas[1], (self._dim_x, self._dim_x))
 
-    def predict_update(self, z):
-        """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically and then the appropriate
-        correction is applied."""
+    def predict_update(self, z, calculate_ss=False):
+        """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically
+        and then the appropriate correction is applied."""
         self.predict()
         self.update(z)
+        if calculate_ss:
+            self.steady_state()
+
+    def steady_state(self):
+        return solve_discrete_are(a=self._Phi_delta.T, b=self._H.T, q=self._Q_delta, r=self._R)

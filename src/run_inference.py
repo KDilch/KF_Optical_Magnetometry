@@ -37,13 +37,16 @@ def run__magnetometer_inference(*args):
             # CREATE A Estimator and Covariance ARRAY====================================================
             x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
             P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
+            P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
             for index, z in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
                 ekf.predict_update(z)
                 x_ekf_est[index] = ekf.x_est
                 P_ekf_est[index] = ekf.P_est
+                if args[0].ekf_ss:
+                    P_ss[index] = ekf.steady_cov
 
-            df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est)
+            df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path + '/csv_inference_cc_ekf')
             if args[0].save_plots:
@@ -67,6 +70,7 @@ def run__magnetometer_inference(*args):
             x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_ekf])
             P_ekf_est = np.array(
                 [np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_ekf])
+            P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_ekf])
             x_filter_freq = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_ekf])
             z_filter_freq = np.zeros(len(time_arr_ekf))
 
@@ -78,9 +82,11 @@ def run__magnetometer_inference(*args):
                     P_ekf_est[index_ekf] = ekf.P_est
                     x_filter_freq[index_ekf] = np.array([element[1]['x0s'], element[1]['x1s'], element[1]['x2s']])
                     z_filter_freq[index_ekf] = element[1]['zs']
+                    if args[0].ekf_ss:
+                        pass
                     index_ekf += 1
 
-            df_output = prepare_df(time_arr_ekf, xs=x_filter_freq, zs=z_filter_freq, xs_est=x_ekf_est, P_est=P_ekf_est)
+            df_output = prepare_df(time_arr_ekf, xs=x_filter_freq, zs=z_filter_freq, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path +
                                             '/csv_inference_cd_ekf_sampling_%r' % filter_params_ekf.dt)
