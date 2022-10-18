@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from scipy.integrate import odeint, solve_ivp
+from scipy.integrate import     solve_ivp
 from scipy.linalg import solve_continuous_are
 from kalman_filter.continuous.ekf import EKF
 

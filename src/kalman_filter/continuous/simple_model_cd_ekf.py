@@ -66,7 +66,12 @@ class CD_EKF(EKF):
 
     def __predict_Q_delta(self):
         self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=20)
-        self._x = np.dot(self._Phi_delta, self._x)
+        # self._x = np.dot(self._Phi_delta, self._x)
+        t = np.linspace(self._t, self._t + self._dt, num=20)  # times to report solution
+        self._x = odeint(CD_EKF.dx_dt,
+                         self._x,
+                         t,
+                         args=(self._dim_x, self.model_params))[-1, :]
         self._P = np.dot(np.dot(self._Phi_delta, self._P), self._Phi_delta.T) + self._Q_delta
         self._t += self._dt
 
