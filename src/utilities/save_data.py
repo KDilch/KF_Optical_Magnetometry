@@ -27,8 +27,6 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
                        })
 
     if (xs_est is not None) and (P_est is not None):
-        from decimal import Decimal
-
         mse0 = (xs[:, 0] - xs_est[:, 0]) ** 2
         mse1 = (xs[:, 1] - xs_est[:, 1]) ** 2
         mse2 = (xs[:, 2] - xs_est[:, 2]) ** 2

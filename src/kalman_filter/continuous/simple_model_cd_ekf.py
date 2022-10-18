@@ -1,7 +1,6 @@
 import numpy as np
-from scipy.integrate import odeint, simps
+from scipy.integrate import solve_ivp, simps, odeint
 from kalman_filter.continuous.ekf import EKF
-from abc import ABC, abstractmethod
 
 
 class CD_EKF(EKF):
@@ -28,7 +27,7 @@ class CD_EKF(EKF):
         return x
 
     @staticmethod
-    def dx_dt(x, t, dim_x, model_params):
+    def dx_dt(t, x, dim_x, model_params):
         return CD_EKF.fx(x, t, model_params)
 
     @staticmethod
@@ -39,45 +38,21 @@ class CD_EKF(EKF):
                                                                                                t,
                                                                                                model_params))) + Q, dim_x ** 2)
 
-    def predict(self, method='default'):
-        if method == 'odeint':
-            self.__predict_odeint()
-        elif method == 'Q_delta' or method == 'default':
-            self.__predict_Q_delta()
-        return
-
-    def __predict_odeint(self):
-        t = np.linspace(self._t, self._t + self._dt, num=20)  # times to report solution
-        P = odeint(CD_EKF.dP_dt,
-                   np.reshape(self._P, self._dim_x ** 2),
-                   t,
-                   args=(self._x,
-                         self._Q,
-                         self._dim_x,
-                         self.model_params))[-1, :]
-        x = odeint(CD_EKF.dx_dt,
-                   self._x,
-                   t,
-                   args=(self._dim_x, self.model_params))[-1, :]
-        self._P = np.reshape(P, (self._dim_x, self._dim_x))
-        self._x = x
-        self._t += self._dt
-        return
-
-    def __predict_Q_delta(self):
+    def predict(self):
         self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=20)
-        # self._x = np.dot(self._Phi_delta, self._x)
-        t = np.linspace(self._t, self._t + self._dt, num=20)  # times to report solution
-        self._x = odeint(CD_EKF.dx_dt,
-                         self._x,
-                         t,
-                         args=(self._dim_x, self.model_params))[-1, :]
+        x_sol = solve_ivp(CD_EKF.dx_dt,
+                          [self._t, self._t + self._dt],
+                           self._x,
+                           method=self.model_params.inference_method,
+                           dense_output=True,
+                           args=(self._dim_x, self.model_params))
+        self._x = x_sol.sol(self._t+self._dt)
         self._P = np.dot(np.dot(self._Phi_delta, self._P), self._Phi_delta.T) + self._Q_delta
         self._t += self._dt
 
     def update(self, z):
         self._z = z
-        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x)# innovation
+        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x)  # innovation
         PHT = np.dot(self._P, self._H.T)
         # S = HPH' + R
         S = np.dot(self._H, PHT) + self._R
@@ -107,8 +82,8 @@ class CD_EKF(EKF):
         self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
         self._Phi_delta = np.reshape(Phi_deltas[1], (self._dim_x, self._dim_x))
 
-    def predict_update(self, z, method='default'):
+    def predict_update(self, z):
         """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically and then the appropriate
         correction is applied."""
-        self.predict(method=method)
+        self.predict()
         self.update(z)
