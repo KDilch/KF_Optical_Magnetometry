@@ -4,13 +4,14 @@ config = SimpleNamespace()
 numAtoms = 10**12
 qx = 0.002
 qy = 0.002
-T2 = 0.87  # in s x1000
+q_omega = 0.
+T2 = 0.87  # in ms
 dt = 0.0000001
-measurement_strength = 3.5*10**(-4)
+measurement_strength = 3.5*10**(8)
 R = 96.
-omega_L = 62.0  # in Hz /1000
+omega_L = 62.0  # in kHz
 config.simulation = {
-    't_max':  3.,
+    't_max':  4.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
@@ -19,7 +20,7 @@ config.simulation = {
     't_0': 0,
     'noise': {'Q_jx': qx*numAtoms/T2,
               'Q_jy': qy*numAtoms/T2,
-              'Q_freq': 0.0},
+              'Q_freq': q_omega},
     'measurement': {'measurement_strength': measurement_strength,
                     'H': np.array([[0., 1., 0.]]),
                     'noise': {'R': R,

@@ -33,7 +33,7 @@ class CD_EKF(EKF):
         return CD_EKF.fx(x, t, model_params)
 
     def predict(self):
-        self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=20)
+        self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=1000)
         x_sol = solve_ivp(CD_EKF.dx_dt,
                           [self._t, self._t + self._dt],
                            self._x,
@@ -58,7 +58,7 @@ class CD_EKF(EKF):
         I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)
         self._P = np.dot(np.dot(I_KH, self._P), I_KH.T) + np.dot(np.dot(self._K, self._R), self._K.T)
 
-    def compute_Phi_delta__Q_delta_odeint(self, t_0, num_terms=20):
+    def compute_Phi_delta__Q_delta_odeint(self, t_0, num_terms=1000):
         Phi_0 = np.reshape(np.identity(self._dim_x), self._dim_x ** 2)  # initial Phi_delta is identity
 
         def dPhidt(Phi, t):
