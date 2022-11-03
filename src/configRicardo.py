@@ -10,7 +10,6 @@ measurement_strength = 0.00176656 #0.00000000000177 #1.77*10**(-15)  # for power
 measurement_strength_renorm = measurement_strength
 R = 96. #in pikoampers
 omega_L = 62.0  # in Hz /1000
-
 config.simulation = {
     't_max':  3.,
     'dt': dt,

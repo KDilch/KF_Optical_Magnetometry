@@ -18,7 +18,7 @@ def save_data_simple_simulation(df, params, dir_name):
                                                                                              )))
 
 
-def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None):
+def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
     df = pd.DataFrame({'time': time_arr,
                        'zs': zs,
                        'x0s': xs[:, 0],
@@ -41,6 +41,10 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None):
         df['mse_x0'] = mse0
         df['mse_x1'] = mse1
         df['mse_x2'] = mse2
+        if P_ss is not None:
+            df['ss_x0'] = P_est[:, 0, 0]
+            df['ss_x1'] = P_est[:, 1, 1]
+            df['ss_x2'] = P_est[:, 2, 2]
     return df
 
 

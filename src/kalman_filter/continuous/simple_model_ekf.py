@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 from scipy.integrate import odeint, solve_ivp
+from scipy.linalg import solve_continuous_are
 from kalman_filter.continuous.ekf import EKF
 
 
@@ -9,12 +10,24 @@ class MagnetometerEKF(EKF):
         EKF.__init__(self, model_params=model_params)
         self.model_params = model_params
         self._F = self.F(self._x, self._t, model_params)
+        self._steady_cov = None
 
+    @property
+    def steady_cov(self):
+        return self._steady_cov
     @staticmethod
     def F(x, t, model_params):
         return np.array([[-1./(model_params.T2), x[2], x[1]],
                          [-x[2], -1./model_params.T2, -x[0]],
                          [0.0, 0.0, 0.0]])
+
+    def steady_state(self):
+        steady_cov = solve_continuous_are(a=np.transpose(self._F),
+                                          b=np.transpose(self._H),
+                                          q=self._Q,
+                                          r=self._R)
+
+        return steady_cov
 
     @staticmethod
     def fx(x_0, t, model_params):
@@ -79,5 +92,6 @@ class MagnetometerEKF(EKF):
         #                                  self._y,
         #                                  self._dt,
         #                                  self.model_params)*self._dt
+        self._steady_cov = self.steady_state()
         self._t += self._dt
         return

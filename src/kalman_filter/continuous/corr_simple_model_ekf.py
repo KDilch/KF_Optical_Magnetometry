@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 from scipy.integrate import odeint, solve_ivp
+from scipy.linalg import solve_discrete_are
 from kalman_filter.continuous.ekf import EKF
 
 
@@ -79,9 +80,6 @@ class CorrSimpleModelEKF(EKF):
         #                  self._dim_x,
         #                  self.model_params)
         # self._P += np.reshape(dP, (self._dim_x, self._dim_x))*self._dt
-
-        self._t += self._dt
-        return
 
 def dx_dt(x, t, K, y, dt, model_params):
     return CorrSimpleModelEKF.fx(x, model_params) + np.dot(K, y) / dt
