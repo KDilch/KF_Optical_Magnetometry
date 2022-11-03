@@ -11,11 +11,11 @@ def save_data_simple_simulation(df, params, dir_name):
     date = datetime.now().strftime('%Y_%m_%d-%I_%M_%S_%p')
 
     df.to_csv(os.path.join(dir_name, '%s_pid_%r_omega_%r_T2_%r_dt_%r.csv' % (date,
-                                                                                             os.getpid(),
-                                                                                             params.x_0[2],
-                                                                                             params.T2,
-                                                                                             params.dt
-                                                                                             )))
+                                                                             os.getpid(),
+                                                                             params.x_0[2],
+                                                                             params.T2,
+                                                                             params.dt
+                                                                             )))
 
 
 def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
@@ -27,11 +27,38 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
                        })
 
     if (xs_est is not None) and (P_est is not None):
-        from decimal import Decimal
-
         mse0 = (xs[:, 0] - xs_est[:, 0]) ** 2
         mse1 = (xs[:, 1] - xs_est[:, 1]) ** 2
         mse2 = (xs[:, 2] - xs_est[:, 2]) ** 2
+        df['x0s_est'] = xs_est[:, 0]
+        df['x1s_est'] = xs_est[:, 1]
+        df['x2s_est'] = xs_est[:, 2]
+        df['x0_err_cov'] = P_est[:, 0, 0]
+        df['x1_err_cov'] = P_est[:, 1, 1]
+        df['x2_err_cov'] = P_est[:, 2, 2]
+        df['mse_x0'] = mse0
+        df['mse_x1'] = mse1
+        df['mse_x2'] = mse2
+        if P_ss is not None:
+            df['ss_x0'] = P_est[:, 0, 0]
+            df['ss_x1'] = P_est[:, 1, 1]
+            df['ss_x2'] = P_est[:, 2, 2]
+    return df
+
+def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):
+    df = pd.DataFrame({'time': time_arr,
+                       'zs': df.zs,
+                       'x0s': df.x0s,
+                       'x1s': df.x1s,
+                       'x2s': df.x2s
+                       })
+
+    if (xs_est is not None) and (P_est is not None):
+        from decimal import Decimal
+
+        mse0 = (df.x0s - xs_est[:, 0]) ** 2
+        mse1 = (df.x1s - xs_est[:, 1]) ** 2
+        mse2 = (df.x2s - xs_est[:, 2]) ** 2
         df['x0s_est'] = xs_est[:, 0]
         df['x1s_est'] = xs_est[:, 1]
         df['x2s_est'] = xs_est[:, 2]
