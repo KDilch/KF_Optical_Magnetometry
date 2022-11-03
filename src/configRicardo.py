@@ -1,17 +1,18 @@
 from types import SimpleNamespace
 import numpy as np
 config = SimpleNamespace()
-numAtoms = 10**12
+numAtoms = 10**9
 qx = 0.002
 qy = 0.002
 T2 = 0.87  # in s x1000
 dt = 0.0000001
-measurement_strength = 3.5*10**(-4)
-R = 96.
+measurement_strength = 0.00176656 #0.00000000000177 #1.77*10**(-15)  # for power 500
+measurement_strength_renorm = measurement_strength
+R = 96. #in pikoampers
 omega_L = 62.0  # in Hz /1000
 
 config.simulation = {
-    't_max':  1.,
+    't_max':  3.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
@@ -21,7 +22,7 @@ config.simulation = {
     'noise': {'Q_jx': qx*numAtoms/T2,
               'Q_jy': qy*numAtoms/T2,
               'Q_freq': 0.0},
-    'measurement': {'measurement_strength': measurement_strength,
+    'measurement': {'measurement_strength': measurement_strength_renorm,
                     'H': np.array([[0., 1., 0.]]),
                     'noise': {'R': R,
                               'mean': 0.0}
@@ -42,7 +43,7 @@ config.filter_ekf = {
                              [0., qy*numAtoms/T2, 0.],
                              [0., 0., 0.]]),
               'mean': np.array([0.0, 0.0, 0.0])},
-    'measurement': {'measurement_strength': measurement_strength,
+    'measurement': {'measurement_strength': measurement_strength_renorm,
                     'H': np.array([[0., 1., 0.]]),
                     'dim_z': 1,
                     'R': np.array([[R]])}
