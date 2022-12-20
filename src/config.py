@@ -5,9 +5,9 @@ numAtoms = 10.
 qx = 0.01
 qy = 0.01
 T2 = 100.
-dt = 0.01
+dt = 0.001
 config.simulation = {
-    't_max':  500.,
+    't_max':  200.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
