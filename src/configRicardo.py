@@ -4,7 +4,7 @@ config = SimpleNamespace()
 numAtoms = 10**9
 qx = 0.002
 qy = 0.002
-q_omega = 1.
+q_omega = 0.
 T2 = 0.87  # in ms
 dt = 0.000001
 measurement_strength = 0.00176656 #0.00000000000177 #1.77*10**(-15)  # for power 500
@@ -13,7 +13,7 @@ R = 96. #in pikoampers
 omega_L = 62.0  # in Hz /1000
 omega_rand = np.random.normal(omega_L, 100)
 config.simulation = {
-    't_max':  2.,
+    't_max':  3.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
