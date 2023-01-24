@@ -44,13 +44,14 @@ class CD_EKF(EKF):
     def predict(self, Phi_Q_method=True):
         if Phi_Q_method:
             self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=1000)
-            x_sol = solve_ivp(CD_EKF.dx_dt,
-                              [self._t, self._t + self._dt],
-                               self._x,
-                               method=self.model_params.inference_method,
-                               dense_output=True,
-                               args=(self._dim_x, self.model_params))
-            self._x = x_sol.sol(self._t+self._dt)
+            # x_sol = solve_ivp(CD_EKF.dx_dt,
+            #                   [self._t, self._t + self._dt],
+            #                    self._x,
+            #                    method=self.model_params.inference_method,
+            #                    dense_output=True,
+            #                    args=(self._dim_x, self.model_params))
+            # self._x = x_sol.sol(self._t+self._dt)
+            self._x = np.dot(self._Phi_delta, self._x)
             self._P = np.dot(np.dot(self._Phi_delta, self._P), self._Phi_delta.T) + self._Q_delta
             self._t += self._dt
         else:
