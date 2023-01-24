@@ -63,7 +63,7 @@ def run__magnetometer_inference(*args):
         if args[0].cd_ekf:
             ekf = CD_EKF(model_params=filter_params_ekf)
             # CREATE A TIME ARRAY AND COMPUTE SAMPLING FREQUENCY ====================================================
-            every_nth_z = np.int(filter_params_ekf.dt/ simulation_params.dt)
+            every_nth_z = np.floor_divide(filter_params_ekf.dt, simulation_params.dt)
             time_arr_ekf = np.arange(0, simulation_params.t_max, filter_params_ekf.dt)
 
             # CREATE A Estimator and Covariance and simulation at filter frequency ARRAY================================
@@ -75,13 +75,13 @@ def run__magnetometer_inference(*args):
             z_filter_freq = np.zeros(len(time_arr_ekf))
 
             index_ekf = 0
-            for index, element in enumerate(tqdm.tqdm(df.iterrows(), desc='pid:%r' % os.getpid())):
+            for index, element in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
                 if index % every_nth_z == 0:
-                    ekf.predict_update(element[1]['zs'] / simulation_params.dt)
+                    ekf.predict_update(element/simulation_params.dt)
                     x_ekf_est[index_ekf] = ekf.x_est
                     P_ekf_est[index_ekf] = ekf.P_est
-                    x_filter_freq[index_ekf] = np.array([element[1]['x0s'], element[1]['x1s'], element[1]['x2s']])
-                    z_filter_freq[index_ekf] = element[1]['zs']
+                    x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
+                    z_filter_freq[index_ekf] = element
                     if args[0].ekf_ss:
                         pass
                     index_ekf += 1

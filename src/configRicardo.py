@@ -5,7 +5,7 @@ config = SimpleNamespace()
 numAtoms = 10**9
 qx = 0.002
 qy = 0.002
-q_omega = 0.
+q_omega = 100.
 T2 = 0.87  # in ms
 dt = 0.000001
 measurement_strength = 0.00176656 #0.00000000000177 #1.77*10**(-15)  # for power 500
@@ -32,7 +32,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 3*dt,
+    'dt': 2*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',

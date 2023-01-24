@@ -41,7 +41,7 @@ class CD_EKF(EKF):
                                                                                                model_params))) + Q,
                           dim_x ** 2)
 
-    def predict(self, Phi_Q_method=True):
+    def predict(self, Phi_Q_method=False):
         if Phi_Q_method:
             self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=1000)
             # x_sol = solve_ivp(CD_EKF.dx_dt,
@@ -78,7 +78,7 @@ class CD_EKF(EKF):
 
     def update(self, z):
         self._z = z
-        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x)  # innovation
+        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x) # innovation
         PHT = np.dot(self._P, self._H.T)
         # S = HPH' + R
         S = np.dot(self._H, PHT) + self._R_delta
