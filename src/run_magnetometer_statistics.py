@@ -37,16 +37,11 @@ def run__magnetometer_statistics(*args):
     args_list = [deepcopy(args) for _ in range(num_reps)]
 
     # MULTIPROCESSING
-    if args[0].simulation_type == 'simple':
-        pool = Pool(10)
-        with pool:
+    pool = Pool(10)
+    with pool:
+        if args[0].simulation_type == 'simple':
             pool.starmap(run__magnetometer, args_list)
-    elif args[0].simulation_type == 'corr':
-        pool = Pool(10)
-        with pool:
+        elif args[0].simulation_type == 'corr':
             pool.starmap(run__magnetometer_corr, args_list)
-
-    elif args[0].simulation_type == '4d':
-        pool = Pool(10)
-        with pool:
+        elif args[0].simulation_type == '4d':
             pool.starmap(run__magnetometer4d, args_list)
