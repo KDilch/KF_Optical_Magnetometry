@@ -25,7 +25,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': dt,
+    'dt': 20*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
@@ -33,7 +33,7 @@ config.filter_ekf = {
     't_0': 0.,
     'P0': np.array([[qx*numAtoms/T2, 0., 0.],
                     [0., qy*numAtoms/T2, 0.],
-                    [0., 0., 1.]]),
+                    [0., 0., 100.]]),
     'noise': {'Q': np.array([[qx*numAtoms/T2, 0., 0.],
                              [0., qy*numAtoms/T2, 0.],
                              [0., 0., 0.]]),

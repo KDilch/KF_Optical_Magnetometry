@@ -43,14 +43,7 @@ class CD_EKF(EKF):
 
     def predict(self, Phi_Q_method=False):
         if Phi_Q_method:
-            self.compute_Phi_delta__Q_delta_odeint(t_0=self._t, num_terms=1000)
-            # x_sol = solve_ivp(CD_EKF.dx_dt,
-            #                   [self._t, self._t + self._dt],
-            #                    self._x,
-            #                    method=self.model_params.inference_method,
-            #                    dense_output=True,
-            #                    args=(self._dim_x, self.model_params))
-            # self._x = x_sol.sol(self._t+self._dt)
+            self.compute_Phi_delta__Q_delta_odeint(t_0=self._t)
             self._x = np.dot(self._Phi_delta, self._x)
             self._P = np.dot(np.dot(self._Phi_delta, self._P), self._Phi_delta.T) + self._Q_delta
             self._t += self._dt
@@ -90,22 +83,32 @@ class CD_EKF(EKF):
         I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)
         self._P = np.dot(np.dot(I_KH, self._P), I_KH.T) + np.dot(np.dot(self._K, self._R_delta), self._K.T)
 
-    def compute_Phi_delta__Q_delta_odeint(self, t_0, num_terms=1000):
+    def compute_Phi_delta__Q_delta_odeint(self, t_0):
         Phi_0 = np.reshape(np.identity(self._dim_x), self._dim_x ** 2)  # initial Phi_delta is identity
 
-        def dPhidt(Phi, t):
+        def dPhidt(t, Phi):
             return np.reshape(np.dot(self.F(self._x, t, self.model_params), np.reshape(Phi, (self._dim_x, self._dim_x))),
                               self._dim_x**2)
 
-        t = np.linspace(t_0, t_0 + self._dt, num=num_terms)  # number of mid-steps
-        Phi_deltas, _ = odeint(dPhidt, np.reshape(Phi_0, self._dim_x**2), t, full_output=True)
-        Phi_s_matrix_form = [np.reshape(Phi_deltas[i], (self._dim_x, self._dim_x)) for i in range(len(Phi_deltas))]
-        Phi_s_transpose_matrix_form = [np.transpose(a) for a in Phi_s_matrix_form]
-        integrands = np.array([np.dot(np.dot(a, self._Q), b) for a, b in zip(Phi_s_matrix_form, Phi_s_transpose_matrix_form)])
-        integrand_split = list(map(list, zip(*integrands.reshape(*integrands.shape[:1], -1))))
-        # calculate integral numerically using simpsons rule
-        self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
-        self._Phi_delta = np.reshape(Phi_deltas[1], (self._dim_x, self._dim_x))
+        Phi_sol = solve_ivp(dPhidt,
+                            [t_0, t_0 + self._dt],
+                            np.reshape(Phi_0, self._dim_x ** 2),
+                            method=self.model_params.inference_method,
+                            dense_output=True)
+
+        def dQ_dt(t, Q, Phi_sol=Phi_sol):
+            Phi_matrix = np.reshape(Phi_sol.sol(t), (self._dim_x, self._dim_x))
+            Q_matrix = np.reshape(Q, (self._dim_x, self._dim_x))
+            return np.reshape(np.dot(np.dot(Phi_matrix, Q_matrix), np.transpose(Phi_matrix)), self._dim_x**2)
+
+        Q_0 = self._Q
+        Q_sol = solve_ivp(dQ_dt,
+                          [t_0, t_0+self._dt],
+                          np.reshape(Q_0, self._dim_x**2),
+                          Phi_sol=Phi_sol,
+                          dense_output=True)
+        self._Q_delta = np.reshape(Q_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
+        self._Phi_delta = np.reshape(Phi_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
 
     def predict_update(self, z, calculate_ss=False, Phi_Q_method=False):
         """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically
