@@ -96,19 +96,16 @@ class CD_EKF(EKF):
                             method=self.model_params.inference_method,
                             dense_output=True)
 
-        def dQ_dt(t, Q, Phi_sol=Phi_sol):
-            Phi_matrix = np.reshape(Phi_sol.sol(t), (self._dim_x, self._dim_x))
-            Q_matrix = np.reshape(Q, (self._dim_x, self._dim_x))
-            return np.reshape(np.dot(np.dot(Phi_matrix, Q_matrix), np.transpose(Phi_matrix)), self._dim_x**2)
+        t = np.arange(t_0, t_0+self._dt, self._dt/10)
 
-        Q_0 = self._Q
-        Q_sol = solve_ivp(dQ_dt,
-                          [t_0, t_0+self._dt],
-                          np.reshape(Q_0, self._dim_x**2),
-                          Phi_sol=Phi_sol,
-                          dense_output=True)
-        self._Q_delta = np.reshape(Q_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
-        self._Phi_delta = np.reshape(Phi_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
+        Phi_s_matrix_form = [np.reshape(Phi_sol.sol(i), (self._dim_x, self._dim_x)) for i in t]
+        Phi_s_transpose_matrix_form = [np.transpose(a) for a in Phi_s_matrix_form]
+        integrands = np.array(
+            [np.dot(np.dot(a, self._Q), b) for a, b in zip(Phi_s_matrix_form, Phi_s_transpose_matrix_form)])
+        integrand_split = list(map(list, zip(*integrands.reshape(*integrands.shape[:1], -1))))
+        # calculate integral numerically using simpsons rule
+        self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
+        self._Phi_delta = np.reshape(Phi_sol.sol(t_0+self._dt), (self._dim_x, self._dim_x))
 
     def predict_update(self, z, calculate_ss=False, Phi_Q_method=False):
         """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically

@@ -76,7 +76,7 @@ def run__magnetometer_inference(*args):
             index_ekf = 0
             for index, element in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
                 if index % every_nth_z == 0:
-                    ekf.predict_update(element/simulation_params.dt, Phi_Q_method=False)
+                    ekf.predict_update(element/simulation_params.dt, Phi_Q_method=True)
                     x_ekf_est[index_ekf] = ekf.x_est
                     P_ekf_est[index_ekf] = ekf.P_est
                     x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])

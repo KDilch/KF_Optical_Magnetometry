@@ -5,7 +5,7 @@ numAtoms = 10.
 qx = 0.01
 qy = 0.01
 T2 = 100.
-dt = 0.001
+dt = 0.0001
 config.simulation = {
     't_max':  200.,
     'dt': dt,
@@ -25,7 +25,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 20*dt,
+    'dt': 100*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
