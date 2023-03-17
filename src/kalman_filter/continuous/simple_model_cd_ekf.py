@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.integrate import solve_ivp, simps, odeint
-from scipy.linalg import solve_discrete_are
+from scipy.integrate import solve_ivp, simps, odeint, quad
+from scipy.linalg import solve_discrete_are, expm
 
 from kalman_filter.continuous.ekf import EKF
 
@@ -83,7 +83,7 @@ class CD_EKF(EKF):
         I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)
         self._P = np.dot(np.dot(I_KH, self._P), I_KH.T) + np.dot(np.dot(self._K, self._R_delta), self._K.T)
 
-    def compute_Phi_delta__Q_delta_odeint(self, t_0):
+    def compute_Phi_delta__Q_delta_odeint(self, t_0, rule="simps"):
         Phi_0 = np.reshape(np.identity(self._dim_x), self._dim_x ** 2)  # initial Phi_delta is identity
 
         def dPhidt(t, Phi):
@@ -95,20 +95,41 @@ class CD_EKF(EKF):
                             np.reshape(Phi_0, self._dim_x ** 2),
                             method=self.model_params.inference_method,
                             dense_output=True)
+        if rule == "simps":
+            t = np.arange(t_0, t_0+self._dt, self._dt/20)
 
-        t = np.arange(t_0, t_0+self._dt, self._dt/10)
+            Phi_s_matrix_form = [np.reshape(Phi_sol.sol(i), (self._dim_x, self._dim_x)) for i in t]
+            Phi_s_transpose_matrix_form = [np.transpose(a) for a in Phi_s_matrix_form]
+            integrands = np.array(
+                [np.dot(np.dot(a, self._Q), b) for a, b in zip(Phi_s_matrix_form, Phi_s_transpose_matrix_form)])
+            integrand_split = list(map(list, zip(*integrands.reshape(*integrands.shape[:1], -1))))
+            self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
+        if rule == "quad":
+            import threading
+            from scipy import integrate
 
-        Phi_s_matrix_form = [np.reshape(Phi_sol.sol(i), (self._dim_x, self._dim_x)) for i in t]
-        Phi_s_transpose_matrix_form = [np.transpose(a) for a in Phi_s_matrix_form]
-        integrands = np.array(
-            [np.dot(np.dot(a, self._Q), b) for a, b in zip(Phi_s_matrix_form, Phi_s_transpose_matrix_form)])
-        integrand_split = list(map(list, zip(*integrands.reshape(*integrands.shape[:1], -1))))
-        # calculate integral numerically using simpsons rule
-        self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
-        self._Phi_delta = np.reshape(Phi_sol.sol(t_0+self._dt), (self._dim_x, self._dim_x))
+            def Phi_matrix(time, dim_x):
+                return np.reshape(Phi_sol.sol(time), (dim_x, dim_x))
+            def integrand(time):
+                return np.dot(np.dot(Phi_matrix(time, 3), self._Q), np.transpose(Phi_matrix(time, 3)))
+
+            res = np.zeros_like(self._Q)
+
+            def f(i):
+                for j in range(3):
+                    integrand_ij= lambda k: integrand(k)[i, j]
+                    integral = integrate.quad(integrand_ij, t_0, t_0+self._dt)
+                    res[i, j] = integral[0]
+            for i in range(3):
+                threading.Thread(target=f(i)).start()
+
+            self._Q_delta = res
+
+        self._Phi_delta = np.reshape(Phi_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
+
 
     def predict_update(self, z, calculate_ss=False, Phi_Q_method=False):
-        """ In continuous-discrete filter the equations for x and P in prediction step are solved numerically
+        """ Idn continuous-discrete filter the equations for x and P in prediction step are solved numerically
         and then the appropriate correction is applied."""
         self.predict(Phi_Q_method=Phi_Q_method)
         self.update(z)
