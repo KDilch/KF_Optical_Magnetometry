@@ -105,11 +105,13 @@ class CD_EKF(EKF):
             integrand_split = list(map(list, zip(*integrands.reshape(*integrands.shape[:1], -1))))
             self._Q_delta = np.reshape(np.array([simps(i, t) for i in integrand_split]), (self._dim_x, self._dim_x))
         if rule == "quad":
+            # this option requires much longer computation
             import threading
             from scipy import integrate
 
             def Phi_matrix(time, dim_x):
                 return np.reshape(Phi_sol.sol(time), (dim_x, dim_x))
+
             def integrand(time):
                 return np.dot(np.dot(Phi_matrix(time, 3), self._Q), np.transpose(Phi_matrix(time, 3)))
 
@@ -117,9 +119,9 @@ class CD_EKF(EKF):
 
             def f(i):
                 for j in range(3):
-                    integrand_ij= lambda k: integrand(k)[i, j]
-                    integral = integrate.quad(integrand_ij, t_0, t_0+self._dt)
+                    integral = integrate.quad(lambda k: integrand(k)[i, j], t_0, t_0+self._dt)
                     res[i, j] = integral[0]
+
             for i in range(3):
                 threading.Thread(target=f(i)).start()
 
