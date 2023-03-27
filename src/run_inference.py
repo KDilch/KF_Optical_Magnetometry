@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import division
+
 import logging
 import numpy as np
 import os
@@ -11,6 +13,7 @@ import glob  # for matching a path REGEX
 from utilities.config_util import import_config_from_path
 from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
 from kalman_filter.continuous.simple_model_cd_ekf import CD_EKF
+from freq_inference import freq_from_autocorr, freq_from_fft, freq_from_periodogram
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df_from_inference, prepare_df
 
@@ -73,19 +76,45 @@ def run__magnetometer_inference(*args):
             P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr_ekf])
             x_filter_freq = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_ekf])
             z_filter_freq = np.zeros(len(time_arr_ekf))
+
+            # CREATE ARRAY TO STORE OUTPUT DATA
+            fft_est_Larmour = np.zeros(len(time_arr_ekf))
+            autocorr_est_Larmour = np.zeros(len(time_arr_ekf))
+            periodogram_est_Larmour = np.zeros(len(time_arr_ekf))
+
             index_ekf = 0
             for index, element in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
                 if index % every_nth_z == 0:
-                    ekf.predict_update(element/simulation_params.dt, Phi_Q_method=True)
+                    ekf.predict_update(element/simulation_params.dt, Phi_Q_method=False)
                     x_ekf_est[index_ekf] = ekf.x_est
                     P_ekf_est[index_ekf] = ekf.P_est
                     x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
                     z_filter_freq[index_ekf] = element
                     if args[0].ekf_ss:
                         pass
+
+                    # Other methods of inference (start only after a 20 initial points)
+                    if index_ekf > 20:
+                        if args[0].fft:
+                            fft_est_Larmour = freq_from_fft(x_ekf_est[0:index_ekf, 1], 1/filter_params_ekf.dt)
+
+                        if (index_ekf % 1000) and args[0].autocorrelation:
+                            autocorr_est_Larmour[index_ekf] = freq_from_autocorr(x_ekf_est[0:index_ekf, 1], 1./filter_params_ekf.dt)
+
+                        if (index_ekf % 1000) and args[0].periodogram:
+                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[0:index_ekf, 1], 1./filter_params_ekf.dt)
+
                     index_ekf += 1
 
-            df_output = prepare_df(time_arr_ekf, xs=x_filter_freq, zs=z_filter_freq, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss)
+            df_output = prepare_df(time_arr_ekf,
+                                   xs=x_filter_freq,
+                                   zs=z_filter_freq,
+                                   xs_est=x_ekf_est,
+                                   P_est=P_ekf_est,
+                                   P_ss=P_ss,
+                                   ftt_freq=fft_est_Larmour,
+                                   autocorr_freq=autocorr_est_Larmour,
+                                   periodogram=periodogram_est_Larmour)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path +
                                             '/csv_inference_cd_ekf_sampling_%r' % filter_params_ekf.dt)

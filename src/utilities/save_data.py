@@ -18,7 +18,7 @@ def save_data_simple_simulation(df, params, dir_name):
                                                                              )))
 
 
-def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
+def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None, ftt_freq=None, autocorr_freq=None, periodogram=None):
     df = pd.DataFrame({'time': time_arr,
                        'zs': zs,
                        'x0s': xs[:, 0],
@@ -43,6 +43,15 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None):
             df['ss_x0'] = P_est[:, 0, 0]
             df['ss_x1'] = P_est[:, 1, 1]
             df['ss_x2'] = P_est[:, 2, 2]
+        if ftt_freq is not None:
+            df['fft_x2'] = ftt_freq
+            df['fft_x2_err_sq'] = (xs[:, 2] - ftt_freq) ** 2
+        if autocorr_freq is not None:
+            df['autocorr_x2'] = autocorr_freq
+            df['autocorr_x2_err_sq'] = (xs[:, 2] - autocorr_freq) ** 2
+        if periodogram is not None:
+            df['periodogram_x2'] = autocorr_freq
+            df['periodogram_x2_err_sq'] = (xs[:, 2] - autocorr_freq) ** 2
     return df
 
 def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):

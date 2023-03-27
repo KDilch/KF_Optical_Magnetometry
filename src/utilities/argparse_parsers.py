@@ -292,6 +292,18 @@ def initialize_parsers():
                                              action='store_true',
                                              help='Bool specifying if you want to run continuous-discrete kalman filter.',
                                              default=False)
+    simulation_parser_inference.add_argument('--fft',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data files.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--autocorrelation',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data files.',
+                                        default=False)
+    simulation_parser_inference.add_argument('--periodogram',
+                                        action='store_true',
+                                        help='Bool specifying if you want to save the data files.',
+                                        default=False)
     simulation_parser_inference.add_argument('--save_data',
                                         action='store_true',
                                         help='Bool specifying if you want to save the data files.',

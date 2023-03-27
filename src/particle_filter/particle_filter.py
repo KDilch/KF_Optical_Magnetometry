@@ -4,7 +4,13 @@ import scipy
 
 class ParticleFilter(object):
 
-    def __init__(self, model_params, mean_prior, cov_prior, dt, num_particles=1000):
+    def __init__(self, model_params, num_particles=1000):
+        self._num_particles = num_particles
+
+        # distribute particles randomly with uniform weight
+        self._weights = np.empty(num_particles)
+        self._weights.fill(1. / num_particles)
+
         self._x = model_params.x_0
         self._t = model_params.t_0
         self._dt = model_params.dt
@@ -19,43 +25,39 @@ class ParticleFilter(object):
         self._P = model_params.P0
         self._y = np.zeros((self._dim_z, 1))  # residual
 
-        self._dz = np.array([model_params.x_0[1]] * self._dim_z)
-        self._num_particles = num_particles
-        self._dt = dt
-        self._mean_prior = mean_prior
-        self._dim_state_vec = len(mean_prior)
-        self._cov_prior = cov_prior
-        self._particles = np.empty((self._num_particles, self._dim_state_vec))
-
+        self._particles = np.empty((self._num_particles, self._dim_x))
         self.create_gaussian_particles()
 
     def create_gaussian_particles(self):
-        for i in range(self._dim_state_vec):
-            self._particles[:, i] = self._mean_prior[i] + (np.random.randn(self._num_particles) * self._cov_prior[i][i])
+        for i in range(self._dim_x):
+            self._particles[:, i] = self._x[i] + (np.random.randn(self._num_particles) * self._P[i][i])
         return self._particles
 
     @staticmethod
-    def fx(x, model_params):
-        raise NotImplementedError('Implement fx function.')
+    def fx(x_0, model_params):
+        dx_dt = np.zeros(3)
+        dx_dt[0] = - (1 / model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        dx_dt[1] = - (1 / model_params.T2) * x_0[1] - x_0[0] * x_0[2]
+        dx_dt[2] = 0
+        return dx_dt
 
     def predict(self):
         """ move according to the model"""
         for i in range(self._num_particles):
             self._particles[i, :] += self.fx(self._x, model_params=self._model_params) * self._dt
 
-    def update(self, particles, weights, z, R, landmarks):
-        """Update according to the measurement outcome"""
-        for i, landmark in enumerate(landmarks):
-            distance = np.linalg.norm(particles[:, 0:2] - landmark, axis=1)
-            weights *= scipy.stats.norm(distance, R).pdf(z[i])
+    def update(self, z):
+        """Update according to the measurement outcome. Landmarks arepossible outcomes."""
+        for i in range(self._dim_x):
+            distance = np.linalg.norm(self._particles[:, i], axis=0)
+            self._weights *= scipy.stats.norm(distance, self._R).pdf(z[i])
 
-        weights += 1.e-300  # avoid round-off to zero
-        weights /= sum(weights)  # normalize
+        self._weights += 1.e-300  # avoid round-off to zero
+        self._weights /= sum(self._weights)  # normalize
 
-    def estimate(self, particles, weights):
+    def estimate(self):
         """returns mean and variance of the weighted particles"""
-
-        pos = particles[:, 0:2]
-        mean = np.average(pos, weights=weights, axis=0)
-        var = np.average((pos - mean) ** 2, weights=weights, axis=0)
-        return mean, var
+        pos = self._particles[:, 0:2]
+        self._x = np.average(pos, weights=self._weights, axis=0)
+        self._P = np.average((pos - self._x) ** 2, weights=self._weights, axis=0)
+        return self._x, self._P
