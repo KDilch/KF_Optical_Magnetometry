@@ -94,15 +94,21 @@ def run__magnetometer_inference(*args):
                         pass
 
                     # Other methods of inference (start only after a 20 initial points)
-                    if index_ekf > 20:
+                    if index_ekf > 10000:
                         if args[0].fft:
-                            fft_est_Larmour = freq_from_fft(x_ekf_est[0:index_ekf, 1], 1/filter_params_ekf.dt)
+                            fft_est_Larmour[index_ekf] = freq_from_fft(x_ekf_est[0:index_ekf, 1],
+                                                                       1./filter_params_ekf.dt,
+                                                                       window_name=None)
 
-                        if (index_ekf % 1000) and args[0].autocorrelation:
-                            autocorr_est_Larmour[index_ekf] = freq_from_autocorr(x_ekf_est[0:index_ekf, 1], 1./filter_params_ekf.dt)
+                        if args[0].autocorrelation:
+                            autocorr_est_Larmour[index_ekf] = freq_from_autocorr(x_ekf_est[index_ekf-10000:index_ekf, 1],
+                                                                                 1./filter_params_ekf.dt,
+                                                                                 window_name=None)
 
-                        if (index_ekf % 1000) and args[0].periodogram:
-                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[0:index_ekf, 1], 1./filter_params_ekf.dt)
+                        if args[0].periodogram:
+                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[index_ekf-10000:index_ekf, 1],
+                                                                                       1./filter_params_ekf.dt,
+                                                                                       window_name=None)
 
                     index_ekf += 1
 

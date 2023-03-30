@@ -50,8 +50,8 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None, ftt_freq=No
             df['autocorr_x2'] = autocorr_freq
             df['autocorr_x2_err_sq'] = (xs[:, 2] - autocorr_freq) ** 2
         if periodogram is not None:
-            df['periodogram_x2'] = autocorr_freq
-            df['periodogram_x2_err_sq'] = (xs[:, 2] - autocorr_freq) ** 2
+            df['periodogram_x2'] = periodogram
+            df['periodogram_x2_err_sq'] = (xs[:, 2] - periodogram) ** 2
     return df
 
 def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):

@@ -47,7 +47,7 @@ class ParticleFilter(object):
             self._particles[i, :] += self.fx(self._x, model_params=self._model_params) * self._dt
 
     def update(self, z):
-        """Update according to the measurement outcome. Landmarks arepossible outcomes."""
+        """Update according to the measurement outcome. Landmarks are possible outcomes."""
         for i in range(self._dim_x):
             distance = np.linalg.norm(self._particles[:, i], axis=0)
             self._weights *= scipy.stats.norm(distance, self._R).pdf(z[i])

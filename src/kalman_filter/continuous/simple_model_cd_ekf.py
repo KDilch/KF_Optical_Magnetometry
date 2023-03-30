@@ -129,7 +129,6 @@ class CD_EKF(EKF):
 
         self._Phi_delta = np.reshape(Phi_sol.sol(t_0 + self._dt), (self._dim_x, self._dim_x))
 
-
     def predict_update(self, z, calculate_ss=False, Phi_Q_method=False):
         """ Idn continuous-discrete filter the equations for x and P in prediction step are solved numerically
         and then the appropriate correction is applied."""
