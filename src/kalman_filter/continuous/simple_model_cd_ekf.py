@@ -12,6 +12,7 @@ class CD_EKF(EKF):
         self._R_delta = self._R/self._dt
         self._Phi_delta = None
         self._Q_delta = None
+        self.steady_cov = None
 
     @staticmethod
     def F(x, t, model_params):
@@ -138,4 +139,5 @@ class CD_EKF(EKF):
             self.steady_state()
 
     def steady_state(self):
-        return solve_discrete_are(a=self._Phi_delta.T, b=self._H.T, q=self._Q_delta, r=self._R)
+        self.steady_cov = solve_discrete_are(a=self._Phi_delta.T, b=self._H.T, q=self._Q_delta, r=self._R)
+        return self.steady_cov

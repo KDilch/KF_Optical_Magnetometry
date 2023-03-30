@@ -131,7 +131,6 @@ def plot_err_ekf_loglog(df, show=False, save=True, dir_name='./', filename='1.pn
     axs[2].loglog(df['time'], df['x2_err_cov'])
     axs[2].loglog(df['time'], df['mse_x2'])
     # axs[2].loglog(df['time'], df['ss_x2'], ":")
-
     # axs[2].loglog(df['time'],  scaling_from_mathematica(df['time']))
 
     axs[2].set_xlabel('time')

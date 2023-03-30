@@ -43,7 +43,7 @@ def run__magnetometer_inference(*args):
             P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
 
             for index, z in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
-                ekf.predict_update(z)
+                ekf.predict_update(z, compute_ss=args[0].ekf_ss)
                 x_ekf_est[index] = ekf.x_est
                 P_ekf_est[index] = ekf.P_est
                 if args[0].ekf_ss:
@@ -91,7 +91,7 @@ def run__magnetometer_inference(*args):
                     x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
                     z_filter_freq[index_ekf] = element
                     if args[0].ekf_ss:
-                        pass
+                        P_ss[index] = ekf.steady_cov
 
                     # Other methods of inference (start only after a 20 initial points)
                     if index_ekf > 10000:
