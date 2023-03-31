@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import solve_ivp, simps, odeint, quad
-from scipy.linalg import solve_discrete_are, expm
+from scipy.linalg import solve_discrete_are, solve_continuous_are
 
 from kalman_filter.continuous.ekf import EKF
 
@@ -138,6 +138,12 @@ class CD_EKF(EKF):
         if calculate_ss:
             self.steady_state()
 
-    def steady_state(self):
-        self.steady_cov = solve_discrete_are(a=self._Phi_delta.T, b=self._H.T, q=self._Q_delta, r=self._R)
+    def steady_state(self, Phi_Q_method=False):
+        if Phi_Q_method:
+            self.steady_cov = solve_discrete_are(a=self._Phi_delta.T, b=self._H.T, q=self._Q_delta, r=self._R)
+        else:
+            self.steady_cov = solve_continuous_are(a=np.transpose(self._F),
+                                                   b=np.transpose(self._H),
+                                                   q=self._Q,
+                                                   r=self._R*self._dt)
         return self.steady_cov

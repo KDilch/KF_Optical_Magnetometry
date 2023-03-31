@@ -73,6 +73,8 @@ def freq_from_periodogram(signal_arr, fs, window_name=None):
     if window_name:
         window = get_window(window_name, len(signal_arr))
         windowed_signal = signal_arr * window
+    # Pxx_den = np.abs(fft.fft(windowed_signal)) ** 2 / len(windowed_signal)
+    # x_fft = 2 * np.pi * fft.fftfreq(len(windowed_signal), 1 / fs)
     freqs, Pxx_den = periodogram(windowed_signal, fs=fs)
     peak = np.argmax(Pxx_den)
     return 2*np.pi*freqs[peak]

@@ -91,7 +91,7 @@ def run__magnetometer_inference(*args):
                     x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
                     z_filter_freq[index_ekf] = element
                     if args[0].ekf_ss:
-                        P_ss[index] = ekf.steady_cov
+                        P_ss[index_ekf] = ekf.steady_cov
 
                     # Other methods of inference (start only after a 20 initial points)
                     if index_ekf > 10000:
@@ -106,7 +106,7 @@ def run__magnetometer_inference(*args):
                                                                                  window_name=None)
 
                         if args[0].periodogram:
-                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[index_ekf-10000:index_ekf, 1],
+                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[0:index_ekf, 1],
                                                                                        1./filter_params_ekf.dt,
                                                                                        window_name=None)
 
