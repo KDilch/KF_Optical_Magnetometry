@@ -2,8 +2,6 @@ import pandas as pd
 import os
 from datetime import datetime
 
-from tqdm.dask import TqdmCallback
-
 
 def save_data_simple_simulation(df, params, dir_name):
     if not os.path.exists(dir_name):
@@ -18,7 +16,17 @@ def save_data_simple_simulation(df, params, dir_name):
                                                                              )))
 
 
-def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None, ftt_freq=None, autocorr_freq=None, periodogram=None):
+def prepare_df(time_arr,
+               xs,
+               zs,
+               xs_est=None,
+               P_est=None,
+               P_ss=None,
+               ftt_freq=None,
+               ipfft_freq=None,
+               autocorr_freq=None,
+               periodogram=None
+               ):
     df = pd.DataFrame({'time': time_arr,
                        'zs': zs,
                        'x0s': xs[:, 0],
@@ -46,6 +54,9 @@ def prepare_df(time_arr, xs, zs, xs_est=None, P_est=None, P_ss=None, ftt_freq=No
         if ftt_freq is not None:
             df['fft_x2'] = ftt_freq
             df['fft_x2_err_sq'] = (xs[:, 2] - ftt_freq) ** 2
+        if ipfft_freq is not None:
+            df['ipfft_x2'] = ipfft_freq
+            df['ipfft_x2_err_sq'] = (xs[:, 2] - ipfft_freq) ** 2
         if autocorr_freq is not None:
             df['autocorr_x2'] = autocorr_freq
             df['autocorr_x2_err_sq'] = (xs[:, 2] - autocorr_freq) ** 2
@@ -85,6 +96,7 @@ def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):
 
 
 def prepare_avg_ddf(ddf):
+    from tqdm.dask import TqdmCallback
     groupedByTime = ddf.groupby('time')
     time_arr = groupedByTime.time.mean().compute()
     with TqdmCallback(desc="Calculating x0_est avg"):

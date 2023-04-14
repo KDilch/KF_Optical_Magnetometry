@@ -78,9 +78,18 @@ def run__magnetometer_inference(*args):
             z_filter_freq = np.zeros(len(time_arr_ekf))
 
             # CREATE ARRAY TO STORE OUTPUT DATA
-            fft_est_Larmour = np.zeros(len(time_arr_ekf))
-            autocorr_est_Larmour = np.zeros(len(time_arr_ekf))
-            periodogram_est_Larmour = np.zeros(len(time_arr_ekf))
+            fft_est_Larmour = None
+            ipfft_est_Larmour = None
+            autocorr_est_Larmour = None
+            periodogram_est_Larmour = None
+            if args[0].fft:
+                fft_est_Larmour = np.zeros(len(time_arr_ekf))
+            if args[0].ipfft:
+                ipfft_est_Larmour = np.zeros(len(time_arr_ekf))
+            if args[0].autocorrelation:
+                autocorr_est_Larmour = np.zeros(len(time_arr_ekf))
+            if args[0].periodogram:
+                periodogram_est_Larmour = np.zeros(len(time_arr_ekf))
 
             index_ekf = 0
             for index, element in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
@@ -95,6 +104,10 @@ def run__magnetometer_inference(*args):
 
                     # Other methods of inference (start only after a 20 initial points)
                     if index_ekf > 10000:
+                        if args[0].ipfft:
+                            ipfft_est_Larmour[index_ekf] = freq_from_fft(x_ekf_est[0:index_ekf, 1],
+                                                                       1./filter_params_ekf.dt,
+                                                                       window_name=None)
                         if args[0].fft:
                             fft_est_Larmour[index_ekf] = freq_from_fft(x_ekf_est[0:index_ekf, 1],
                                                                        1./filter_params_ekf.dt,
@@ -106,7 +119,7 @@ def run__magnetometer_inference(*args):
                                                                                  window_name=None)
 
                         if args[0].periodogram:
-                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[0:index_ekf, 1],
+                            periodogram_est_Larmour[index_ekf] = freq_from_periodogram(x_ekf_est[index_ekf-10000:index_ekf, 1],
                                                                                        1./filter_params_ekf.dt,
                                                                                        window_name=None)
 
@@ -120,14 +133,14 @@ def run__magnetometer_inference(*args):
                                    P_ss=P_ss,
                                    ftt_freq=fft_est_Larmour,
                                    autocorr_freq=autocorr_est_Larmour,
-                                   periodogram=periodogram_est_Larmour)
+                                   periodogram=periodogram_est_Larmour,
+                                   ipfft_freq=ipfft_est_Larmour)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path +
                                             '/csv_inference_cd_ekf_sampling_%r' % filter_params_ekf.dt)
             if args[0].save_plots:
                 plot_simple_model(df_output,
-                                  dir_name=args[0].output_path + '/plots_inference_cd_ekf_filter_dt_%r'
-                                           % filter_params_ekf.dt,
+                                  dir_name=args[0].output_path + '/plots_inference_cd_ekf_filter_dt_%r' % filter_params_ekf.dt,
                                   params=simulation_params,
                                   simulation=True,
                                   ekf=args[0].cd_ekf,
