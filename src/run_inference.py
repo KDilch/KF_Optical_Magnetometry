@@ -13,7 +13,7 @@ import glob  # for matching a path REGEX
 from utilities.config_util import import_config_from_path
 from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
 from kalman_filter.continuous.simple_model_cd_ekf import CD_EKF
-from freq_inference import freq_from_autocorr, freq_from_fft, freq_from_periodogram
+from freq_inference import freq_from_autocorr, freq_from_fft, freq_from_periodogram, ipFFT
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df_from_inference, prepare_df
 
@@ -105,9 +105,9 @@ def run__magnetometer_inference(*args):
                     # Other methods of inference (start only after a 20 initial points)
                     if index_ekf > 10000:
                         if args[0].ipfft:
-                            ipfft_est_Larmour[index_ekf] = freq_from_fft(x_ekf_est[0:index_ekf, 1],
-                                                                       1./filter_params_ekf.dt,
-                                                                       window_name=None)
+                            ipfft_est_Larmour[index_ekf] = ipFFT(x_ekf_est[0:index_ekf, 1],
+                                                                 1./filter_params_ekf.dt,
+                                                                 10.0)
                         if args[0].fft:
                             fft_est_Larmour[index_ekf] = freq_from_fft(x_ekf_est[0:index_ekf, 1],
                                                                        1./filter_params_ekf.dt,
