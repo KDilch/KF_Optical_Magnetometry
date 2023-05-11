@@ -2,8 +2,8 @@ from types import SimpleNamespace
 import numpy as np
 config = SimpleNamespace()
 numAtoms = 10.
-qx = 0.01
-qy = 0.01
+qx = 10.0
+qy = 10.0
 T2 = 100.
 dt = 0.0001
 config.simulation = {
@@ -29,7 +29,7 @@ config.filter_ekf = {
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
-    'x_0': np.array([numAtoms/2, 0., 2.]),
+    'x_0': np.array([numAtoms/2, 0., 200.]),
     't_0': 0.,
     'P0': np.array([[qx*numAtoms/T2, 0., 0.],
                     [0., qy*numAtoms/T2, 0.],
