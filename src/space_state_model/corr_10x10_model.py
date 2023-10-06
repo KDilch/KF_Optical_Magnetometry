@@ -27,10 +27,10 @@ class Corr_10x10_CC_Sensor_Model(Model):
         get_B_bound = partial(self.B, params=self._params)
         x = sdeint.itoint(dx_dt_bound, get_B_bound, self._x, tspan)[-1, :]
         self._x = x
-        self.read_sensor(noise)
+        self.read_cont_sensor(noise)
         return self._x, self._z
 
-    def read_sensor(self, noise=None):
+    def read_cont_sensor(self, noise=None):
         if noise is None:
             raise ValueError('In correlated version noise should not be None')
         else:

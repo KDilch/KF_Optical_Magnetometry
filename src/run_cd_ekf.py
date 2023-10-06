@@ -9,7 +9,7 @@ import os
 import json
 
 from utilities.config_util import import_config_from_path
-from space_state_model.simple_sensor_model import Simple_CC_Sensor_Model
+from space_state_model.simple_sensor_model import Simple_Sensor_Model
 from kalman_filter.continuous.simple_model_cd_ekf import CD_EKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
@@ -55,8 +55,8 @@ def run__magnetometer_cd(*args):
 
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     # INITIALIZE THE MODEL=====================================================
-    simulation_dynamical_model = Simple_CC_Sensor_Model(t=0,
-                                                        simulation_params=simulation_params)
+    simulation_dynamical_model = Simple_Sensor_Model(t=0,
+                                                     simulation_params=simulation_params)
     ekf = CD_EKF(model_params=filter_params_ekf)
 
     # ALLOCATE MEMORY FOR THE ARRAYS=====================================================

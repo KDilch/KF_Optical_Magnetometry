@@ -27,7 +27,7 @@ class EKF(object):
 
     @staticmethod
     def F(x, t, model_params):
-        raise NotImplementedError('Implement F function.')
+        raise NotImplementedError('Implement F function (jacobian).')
 
     @staticmethod
     def fx(x_0, t, model_params):

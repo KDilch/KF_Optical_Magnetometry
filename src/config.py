@@ -2,10 +2,10 @@ from types import SimpleNamespace
 import numpy as np
 config = SimpleNamespace()
 numAtoms = 10.
-qx = 10.0
-qy = 10.0
+qx = 1.  # 10
+qy = 1.  # 10
 T2 = 100.
-dt = 0.0001
+dt = 0.001
 config.simulation = {
     't_max':  200.,
     'dt': dt,
@@ -19,13 +19,14 @@ config.simulation = {
               'Q_freq': 0.0},
     'measurement': {'measurement_strength': 12.,
                     'H': np.array([[0., 1., 0.]]),
-                    'noise': {'R': 0.01,
+                    'noise': {'R': 0.0001,
+                              'R_delta': 0.0001/(10*dt),
                               'mean': 0.0}
                     }
 }
 
 config.filter_ekf = {
-    'dt': 12*dt,
+    'dt': 10*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
@@ -41,5 +42,5 @@ config.filter_ekf = {
     'measurement': {'measurement_strength': 12.,
                     'H': np.array([[0., 1., 0.]]),
                     'dim_z': 1,
-                    'R': np.array([[0.01]])}
+                    'R': np.array([[0.0001]])}
 }

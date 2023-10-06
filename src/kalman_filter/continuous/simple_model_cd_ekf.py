@@ -17,15 +17,15 @@ class CD_EKF(EKF):
     @staticmethod
     def F(x, t, model_params):
         # Jacobian
-        return np.array([[-1/(model_params.T2), x[2], x[1]],
-                         [-x[2], -1/(model_params.T2), -x[0]],
+        return np.array([[-1/model_params.T2, x[2], x[1]],
+                         [-x[2], -1/model_params.T2, -x[0]],
                          [0.0, 0.0, 0.0]])
 
     @staticmethod
     def fx(x_0, t, model_params):
         x = np.zeros(3)
-        x[0] += - 1/(model_params.T2) * x_0[0] + x_0[1] * x_0[2]
-        x[1] += - 1/(model_params.T2) * x_0[1] - x_0[0] * x_0[2]
+        x[0] += - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        x[1] += - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2]
         x[2] += 0
         return x
 
@@ -72,13 +72,12 @@ class CD_EKF(EKF):
 
     def update(self, z):
         self._z = z
-        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x) # innovation
+        self._y = self._z - self._measurement_strength*np.dot(self._H, self._x)  # innovation
         PHT = np.dot(self._P, self._H.T)
-        # S = HPH' + R
         S = np.dot(self._H, PHT) + self._R_delta
-        SI = np.linalg.inv(S)
+        S_INV = np.linalg.inv(S)
         # K = PH'inv(S)
-        self._K = np.dot(PHT, SI)
+        self._K = np.dot(PHT, S_INV)
         # x = x + Ky
         self._x = self._x + np.dot(self._K, self._y)
         I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)

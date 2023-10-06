@@ -19,6 +19,7 @@ def save_data_simple_simulation(df, params, dir_name):
 def prepare_df(time_arr,
                xs,
                zs,
+               meas_noise=None,
                xs_est=None,
                P_est=None,
                P_ss=None,
@@ -33,6 +34,9 @@ def prepare_df(time_arr,
                        'x1s': xs[:, 1],
                        'x2s': xs[:, 2]
                        })
+
+    if meas_noise is not None:
+        df['meas_noise'] = meas_noise
 
     if (xs_est is not None) and (P_est is not None):
         mse0 = (xs[:, 0] - xs_est[:, 0]) ** 2

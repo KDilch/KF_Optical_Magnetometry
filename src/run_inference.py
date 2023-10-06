@@ -66,7 +66,7 @@ def run__magnetometer_inference(*args):
         if args[0].cd_ekf:
             ekf = CD_EKF(model_params=filter_params_ekf)
             # CREATE A TIME ARRAY AND COMPUTE SAMPLING FREQUENCY ====================================================
-            every_nth_z = int(filter_params_ekf.dt/simulation_params.dt)
+            every_nth_z = int(simulation_params.dt/filter_params_ekf.dt)
             time_arr_ekf = np.arange(0, simulation_params.t_max, filter_params_ekf.dt)
 
             # CREATE A Estimator and Covariance and simulation at filter frequency ARRAY================================

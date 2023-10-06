@@ -42,10 +42,10 @@ class Simple_CC_Correlated_Sensor_Model(Model):
                            0.0])
             self._x += dx + self.get_intrinsic_noise(noise)
 
-        self.read_sensor(noise)
+        self.read_cont_sensor(noise)
         return self._x, self._z
 
-    def read_sensor(self, noise=None):
+    def read_cont_sensor(self, noise=None):
         if noise is None:
             raise ValueError('In correlated version noise should not be None')
         else:
