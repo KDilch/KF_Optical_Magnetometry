@@ -7,10 +7,9 @@ from space_state_model.model import Model
 
 
 class Simple_Sensor_Model(Model):
-    def __init__(self, t, simulation_params, discrete_measurement=False, logger=None):
+    def __init__(self, t, simulation_params, logger=None):
         self._logger = logger or logging.getLogger(__name__)
         Model.__init__(self, t, simulation_params, logger=logger)
-        self._discrete_measurement = discrete_measurement
         self._H = simulation_params.measurement.H  # specifies the measurement model
         self._dim_x = len(self._x)
 
@@ -59,7 +58,4 @@ class Simple_Sensor_Model(Model):
 
     def get_measurement_noise(self):
         """Generates dW Wiener increment of the measurement noise."""
-        if self._discrete_measurement:
-            return np.array([np.sqrt(self._params.measurement.noise.R_delta) * np.random.randn()])
-        else:
-            return np.array([np.sqrt(self._params.dt * self._params.measurement.noise.R) * np.random.randn()])
+        return np.array([np.sqrt(self._params.dt * self._params.measurement.noise.R) * np.random.randn()])

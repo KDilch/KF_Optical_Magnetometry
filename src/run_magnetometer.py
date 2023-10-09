@@ -56,8 +56,7 @@ def run__magnetometer(*args):
     time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
     # INITIALIZE THE MODEL=====================================================
     simulation_dynamical_model = Simple_Sensor_Model(t=0,
-                                                     simulation_params=simulation_params,
-                                                     discrete_measurement=True)
+                                                     simulation_params=simulation_params)
     if args[0].ekf:
         ekf = MagnetometerEKF(model_params=filter_params_ekf)
 
