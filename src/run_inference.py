@@ -66,7 +66,7 @@ def run__magnetometer_inference(*args):
         if args[0].cd_ekf:
             ekf = CD_EKF(model_params=filter_params_ekf)
             # CREATE A TIME ARRAY AND COMPUTE SAMPLING FREQUENCY ====================================================
-            every_nth_z = int(simulation_params.dt/filter_params_ekf.dt)
+            every_nth_z = int(filter_params_ekf.dt/simulation_params.dt)
             time_arr_ekf = np.arange(0, simulation_params.t_max, filter_params_ekf.dt)
 
             # CREATE A Estimator and Covariance and simulation at filter frequency ARRAY================================
@@ -102,7 +102,7 @@ def run__magnetometer_inference(*args):
                     if args[0].ekf_ss:
                         P_ss[index_ekf] = ekf.steady_cov
 
-                    # Other methods of inference (start only after a 20 initial points)
+                    # Other methods of inference (start only after 20 initial points)
                     if index_ekf > 10000:
                         if args[0].ipfft:
                             ipfft_est_Larmour[index_ekf] = ipFFT(x_ekf_est[0:index_ekf, 1],

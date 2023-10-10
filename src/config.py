@@ -26,7 +26,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 4*dt,
+    'dt': 2*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
