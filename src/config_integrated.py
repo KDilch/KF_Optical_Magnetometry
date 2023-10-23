@@ -6,7 +6,8 @@ qx = 0.1
 qy = 0.1
 T2 = 100.
 dt = 0.001
-
+dt_ekf = 200*dt
+# for simulation continuous parameters
 config.simulation = {
     't_max':  200.,
     'dt': dt,
@@ -24,23 +25,25 @@ config.simulation = {
                               'mean': 0.0}
                     }
 }
-
+# for discrete ekf covariances should be properly adjusted
 config.filter_ekf = {
-    'dt': 2*dt,
+    'dt': dt_ekf,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
-    'x_0': np.array([numAtoms/2, 0., 2.]),
+    'x_0': np.array([numAtoms/2, 0., 2., 1.]),
     't_0': 0.,
     'P0': np.array([[qx*numAtoms/T2, 0., 0.],
                     [0., qy*numAtoms/T2, 0.],
+                    [0., 0., 100.],
                     [0., 0., 100.]]),
-    'noise': {'Q': np.array([[qx*numAtoms/T2, 0., 0.],
-                             [0., qy*numAtoms/T2, 0.],
-                             [0., 0., 0.]]),
-              'mean': np.array([0.0, 0.0, 0.0])},
+    'noise': {'Q': np.array([[qx*numAtoms/T2*dt_ekf, 0., 0.],
+                             [0., qy*numAtoms/T2*dt_ekf, 0.],
+                             [0., 0., 0.],
+                             [0., 0., 1.]]),
+              'mean': np.array([0.0, 0.0, 0.0, 0.0])},
     'measurement': {'measurement_strength': 12.,
-                    'H': np.array([[0., 1., 0.]]),
+                    'H': np.array([[0., 1., 0., 0.]]),
                     'dim_z': 1,
-                    'R': np.array([[0.01]])}
+                    'R': np.array([[0.01*dt_ekf]])}
 }

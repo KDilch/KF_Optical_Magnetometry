@@ -135,6 +135,7 @@ def run__magnetometer_inference(*args):
                                    autocorr_freq=autocorr_est_Larmour,
                                    periodogram=periodogram_est_Larmour,
                                    ipfft_freq=ipfft_est_Larmour)
+
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path +
                                             '/csv_inference_cd_ekf_sampling_%r' % filter_params_ekf.dt)
