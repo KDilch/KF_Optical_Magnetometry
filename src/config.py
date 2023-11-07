@@ -4,16 +4,16 @@ config = SimpleNamespace()
 numAtoms = 10.
 qx = 0.1
 qy = 0.1
-T2 = 100.
+T2 = 10.
 dt = 0.001
 
 config.simulation = {
-    't_max':  200.,
+    't_max':  20.,
     'dt': dt,
     'dim_measurement': 1,
     'T2': T2,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
-    'x_0': np.array([numAtoms/2., 0., 0.5]),  # initial state vector [Jx, Jy, omega]
+    'x_0': np.array([numAtoms/2., 0., 1.]),  # initial state vector [Jx, Jy, omega]
     't_0': 0,
     'noise': {'Q_jx': qx*numAtoms/T2,
               'Q_jy': qy*numAtoms/T2,
@@ -26,8 +26,9 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 2*dt,
+    'dt': dt,
     'T2': T2,
+    'numAtoms': numAtoms,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
     'x_0': np.array([numAtoms/2, 0., 2.]),

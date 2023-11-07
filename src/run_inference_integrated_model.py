@@ -51,7 +51,7 @@ def run__magnetometer_integrated_inference(*args):
                     ekf.predict_update(element/simulation_params.dt)
                     x_ekf_est[index_ekf] = ekf.x_est
                     P_ekf_est[index_ekf] = ekf.P_est
-                    x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
+                    x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index], 1.])
                     z_filter_freq[index_ekf] = element
 
                     index_ekf += 1

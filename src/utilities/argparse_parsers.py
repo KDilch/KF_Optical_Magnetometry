@@ -107,7 +107,7 @@ def initialize_parsers():
                                    action='store',
                                    help='A string representing a method used to solve SDEs.',
                                    default='default')
-    simulation_parser.set_defaults(func=run__magnetometer_integrated)
+    simulation_parser.set_defaults(func=run__magnetometer_integrated_inference)
     # RUN MAGNETOMETER CD MODEL=========================================================================================
     simulation_parser = subparsers.add_parser('run-magnetometer-cd',
                                               help='Run atomic sensor simulation with the integrated model')

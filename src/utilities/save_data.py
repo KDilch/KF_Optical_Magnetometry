@@ -69,7 +69,7 @@ def prepare_df(time_arr,
             df['periodogram_x2_err_sq'] = (xs[:, 2] - periodogram) ** 2
     return df
 
-def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):
+def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None, MLE=None):
     df = pd.DataFrame({'time': time_arr,
                        'zs': df.zs,
                        'x0s': df.x0s,
@@ -92,6 +92,7 @@ def prepare_df_from_inference(time_arr, df, xs_est=None, P_est=None, P_ss=None):
         df['mse_x0'] = mse0
         df['mse_x1'] = mse1
         df['mse_x2'] = mse2
+        df['MLE_Larmor'] = MLE
         if P_ss is not None:
             df['ss_x0'] = P_est[:, 0, 0]
             df['ss_x1'] = P_est[:, 1, 1]

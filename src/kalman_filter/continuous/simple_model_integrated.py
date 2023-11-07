@@ -18,7 +18,7 @@ class MagnetometerEKFIntegrated(EKF):
                          [x[3]*model_params.N/2*np.exp(-model_params.dt/model_params.T2)*np.sin(x[2]*model_params.dt),
                           x[3]*model_params.N/2*np.exp(-model_params.dt/model_params.T2)*np.cos(x[2]*model_params.dt),
                           x[3]*model_params.N/2*np.exp(-model_params.dt/model_params.T2)*(-x[1]*np.sin(model_params.dt*x[2])*model_params.dt+x[0]*np.cos(model_params.dt*x[2])*model_params.dt),
-                          model_params.N/2*np.exp(-model_params.dt/model_params.T2)*(x[1]*np.cos[model_params.dt *x[2]] + x[0]*np.sin(model_params.dt*x[2]))],
+                          model_params.N/2*np.exp(-model_params.dt/model_params.T2)*(x[1]*np.cos(model_params.dt *x[2]) + x[0]*np.sin(model_params.dt*x[2]))],
                          [0.0,
                           0.0,
                           1.0,

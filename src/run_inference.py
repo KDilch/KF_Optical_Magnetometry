@@ -15,6 +15,7 @@ from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
 from kalman_filter.continuous.simple_model_cd_ekf import CD_EKF
 from freq_inference import freq_from_autocorr, freq_from_fft, freq_from_periodogram, ipFFT
 from plots import plot_simple_model
+from MLE_omega import MLE_omega
 from utilities.save_data import save_data_simple_simulation, prepare_df_from_inference, prepare_df
 
 
@@ -34,6 +35,10 @@ def run__magnetometer_inference(*args):
         df = pd.read_csv(file)
         if args[0].cc_ekf:
             ekf = MagnetometerEKF(model_params=filter_params_ekf)
+            MLE_obj = MLE_omega(filter_params_ekf.numAtoms,
+                                  filter_params_ekf.T2,
+                                  filter_params_ekf.noise.Q[1][1]+filter_params_ekf.measurement.R[0][0],
+                                  filter_params_ekf.dt, filter_params_ekf.dt)
             # CREATE A TIME ARRAY====================================================
             time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
 
@@ -41,6 +46,7 @@ def run__magnetometer_inference(*args):
             x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr])
             P_ekf_est = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
             P_ss = np.array([np.zeros((len(filter_params_ekf.x_0), len(filter_params_ekf.x_0))) for _ in time_arr])
+            MLE_omega_est = np.array(np.zeros(len(time_arr)))
 
             for index, z in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
                 ekf.predict_update(z, compute_ss=args[0].ekf_ss)
@@ -48,8 +54,14 @@ def run__magnetometer_inference(*args):
                 P_ekf_est[index] = ekf.P_est
                 if args[0].ekf_ss:
                     P_ss[index] = ekf.steady_cov
+                # MLE estimator implementation (uncomment to RUN)
+                if index > 1: #and index<3000:
+                    MLE_omega_est[index] = MLE_obj.find_MLE(x_ekf_est[0:index, 1])
+                else:
+                    MLE_omega_est[index] = 0.0
 
-            df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss)
+
+            df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss, MLE=MLE_omega_est)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path + '/csv_inference_cc_ekf')
             if args[0].save_plots:
