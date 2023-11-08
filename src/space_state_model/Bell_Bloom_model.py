@@ -13,6 +13,7 @@ class Bell_Bloom_Magnetometer_Model(Model):
         self._H = simulation_params.measurement.H
         self._pump_rate = simulation_params.pump_rate
         self._F_max = simulation_params.num_atoms/2
+        self.omega_pump = simulation_params.omega_pumping
         self._dim_x = len(self._x)
 
     def step(self, method="default", num_steps=20):
@@ -37,13 +38,18 @@ class Bell_Bloom_Magnetometer_Model(Model):
         self.read_sensor()
         return self._x, self._z
 
+    def __pump_rate(self, t, eps=1e-1):
+        if np.cos(self.omega_pump*t) - 1 < eps:
+            return self._pump_rate
+        return 0
+
     def read_sensor(self):
         self._z = self.hx() * self._dt + self.get_measurement_noise()
         return
 
     def f_x_t(self, x, t):
         return np.array([- (1 / self._params.T2) * x[0] + x[1] * x[2],
-                         - (1 / self._params.T2) * x[1] - x[0] * x[2] + self._pump_rate*(self._F_max-x[1]),
+                         - (1 / self._params.T2) * x[1] - x[0] * x[2] + self.__pump_rate(t)*(self._F_max-x[1]),
                          0.0])
     def G(self, x, t):
         return np.identity(len(x))

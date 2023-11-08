@@ -16,18 +16,18 @@ class CD_Bell_Bloom_EKF(EKF):
 
     @staticmethod
     def F(x, t, model_params):
-        # Jacobian
-        return np.array([[-1/model_params.T2, x[2], x[1]],
-                         [-x[2], -1/model_params.T2-model_params.pump_rate, -x[0]],
+        return np.array([[-1./(model_params.T2), x[2], x[1]],
+                         [-x[2], -1./model_params.T2-CD_Bell_Bloom_EKF.pump_rate(t, model_params), -x[0]],
                          [0.0, 0.0, 0.0]])
 
     @staticmethod
     def fx(x_0, t, model_params):
-        x = np.zeros(3)
-        x[0] += - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
-        x[1] += - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2] + model_params.pump_rate*(model_params.num_atoms/2 - x_0[1])
-        x[2] += 0
-        return x
+        dx_dt = np.zeros(3)
+        dx_dt[0] = - (1 / model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        dx_dt[1] = - (1 / model_params.T2) * x_0[1] - x_0[0] * x_0[2] + CD_Bell_Bloom_EKF.pump_rate(t, model_params) * (
+                    model_params.num_atoms / 2 - x_0[1])
+        dx_dt[2] = 0
+        return dx_dt
 
     @staticmethod
     def dx_dt(t, x, dim_x, model_params):
@@ -41,6 +41,12 @@ class CD_Bell_Bloom_EKF(EKF):
                                                                                                t,
                                                                                                model_params))) + Q,
                           dim_x ** 2)
+
+    @staticmethod
+    def pump_rate(t, model_params, eps=1e-1):
+        if np.cos(model_params.omega_pumping * t) - 1 < eps:
+            return model_params.pump_rate
+        return 0
 
     def predict(self, Phi_Q_method=False):
         P_sol = solve_ivp(CD_Bell_Bloom_EKF.dP_dt,

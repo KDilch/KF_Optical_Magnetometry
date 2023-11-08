@@ -17,10 +17,9 @@ class BellBloomEKF(EKF):
     def steady_cov(self):
         return self._steady_cov
     @staticmethod
-    # TODO update F for Bell Bloom
     def F(x, t, model_params):
         return np.array([[-1./(model_params.T2), x[2], x[1]],
-                         [-x[2], -1./model_params.T2-model_params.pump_rate, -x[0]],
+                         [-x[2], -1./model_params.T2-BellBloomEKF.pump_rate(t, model_params), -x[0]],
                          [0.0, 0.0, 0.0]])
 
     def steady_state(self):
@@ -32,11 +31,16 @@ class BellBloomEKF(EKF):
         return steady_cov
 
     @staticmethod
-    # TODO update fx for Bell Bloom
+    def pump_rate(t, model_params, eps=1e-2):
+        if np.cos(model_params.omega_pumping * t) - 1 < eps:
+            return model_params.pump_rate
+        return 0
+
+    @staticmethod
     def fx(x_0, t, model_params):
         dx_dt = np.zeros(3)
         dx_dt[0] = - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
-        dx_dt[1] = - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2] + model_params.pump_rate*(model_params.num_atoms/2-x_0[1])
+        dx_dt[1] = - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2] + BellBloomEKF.pump_rate(t, model_params)*(model_params.num_atoms/2-x_0[1])
         dx_dt[2] = 0
         return dx_dt
 
