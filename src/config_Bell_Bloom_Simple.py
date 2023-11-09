@@ -29,7 +29,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': dt,
+    'dt': 5*dt,
     'T2': T2,
     'omega_pumping': 2.,
     'numAtoms': numAtoms,

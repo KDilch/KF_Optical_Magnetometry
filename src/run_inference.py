@@ -55,10 +55,11 @@ def run__magnetometer_inference(*args):
                 if args[0].ekf_ss:
                     P_ss[index] = ekf.steady_cov
                 # MLE estimator implementation (uncomment to RUN)
-                if index > 1: #and index<3000:
-                    MLE_omega_est[index] = MLE_obj.find_MLE(x_ekf_est[0:index, 1])
-                else:
-                    MLE_omega_est[index] = 0.0
+                # if index > 1: #and index<3000:
+                    # MLE_omega_est[index] = MLE_obj.find_MLE(x_ekf_est[0:index, 1])
+                # else:
+
+                MLE_omega_est[index] = 0.0
 
 
             df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss, MLE=MLE_omega_est)

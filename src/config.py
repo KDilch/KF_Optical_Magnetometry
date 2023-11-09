@@ -26,7 +26,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': dt,
+    'dt': 100*dt,
     'T2': T2,
     'numAtoms': numAtoms,
     'frequency_decay_rate': 0.0,
