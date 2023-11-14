@@ -62,7 +62,12 @@ def run__bell_bloom_inference(*args):
                 #     MLE_omega_est[index] = 0.0
 
 
-            df_output = prepare_df_from_inference(time_arr, df=df, xs_est=x_ekf_est, P_est=P_ekf_est, P_ss=P_ss, MLE=None)
+            df_output = prepare_df_from_inference(time_arr,
+                                                  df=df,
+                                                  xs_est=x_ekf_est,
+                                                  P_est=P_ekf_est,
+                                                  P_ss=P_ss,
+                                                  MLE=None)
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path + '/csv_inference_cc_ekf')
             if args[0].save_plots:
@@ -96,7 +101,7 @@ def run__bell_bloom_inference(*args):
                     ekf.predict_update(element/simulation_params.dt, Phi_Q_method=False)
                     x_ekf_est[index_ekf] = ekf.x_est
                     P_ekf_est[index_ekf] = ekf.P_est
-                    x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
+                    # x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
                     z_filter_freq[index_ekf] = element
                     if args[0].ekf_ss:
                         P_ss[index_ekf] = ekf.steady_cov

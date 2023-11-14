@@ -1,4 +1,3 @@
-
 from types import SimpleNamespace
 import numpy as np
 config = SimpleNamespace()
@@ -8,9 +7,9 @@ qy = 0.002
 q_omega = 0.
 T2 = 0.87  # in ms
 dt = 0.000001
-measurement_strength = 0.00176656 #0.00000000000177 #1.77*10**(-15)  # for power 500
+measurement_strength = 0.00176656  # 0.00000000000177 #1.77*10**(-15)  # for power 500
 measurement_strength_renorm = measurement_strength
-R = 96. #in pikoampers
+R = 96.  # in picoamperes
 omega_L = 62.0  # in Hz /1000
 omega_rand = np.random.normal(omega_L, 1)
 config.simulation = {
@@ -32,7 +31,7 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 5*dt,
+    'dt': 1*dt,
     'T2': T2,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
@@ -40,7 +39,7 @@ config.filter_ekf = {
     't_0': 0.,
     'P0': np.array([[0., 0., 0.],
                     [0., numAtoms, 0.],
-                    [0., 0., 1.]]),
+                    [0., 0., 10.]]),
     'noise': {'Q': np.array([[qx*numAtoms/T2, 0., 0.],
                              [0., qy*numAtoms/T2, 0.],
                              [0., 0., q_omega]]),

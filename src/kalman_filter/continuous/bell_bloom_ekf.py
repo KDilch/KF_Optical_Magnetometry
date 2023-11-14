@@ -32,8 +32,9 @@ class BellBloomEKF(EKF):
 
     @staticmethod
     def pump_rate(t, model_params, eps=1e-2):
-        if np.cos(model_params.omega_pumping * t) - 1 < eps:
-            return model_params.pump_rate
+        period_pump = (2 * np.pi / model_params.omega_pumping)
+        if np.abs(np.cos(model_params.omega_pumping * t) - 1) < np.cos(model_params.omega_pumping * 0.9*period_pump):
+            return 1.
         return 0
 
     @staticmethod
