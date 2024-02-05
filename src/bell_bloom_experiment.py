@@ -13,13 +13,11 @@ import glob  # for matching a path REGEX
 from utilities.config_util import import_config_from_path
 from kalman_filter.continuous.bell_bloom_ekf import BellBloomEKF
 from kalman_filter.continuous.bell_bloom_cd_ekf import CD_Bell_Bloom_EKF
-from freq_inference import freq_from_autocorr, freq_from_fft, freq_from_periodogram, ipFFT
 from plots import plot_simple_model
-from MLE_omega import MLE_omega
 from utilities.save_data import save_data_simple_simulation, prepare_df_from_inference, prepare_df
 
 
-def run__bell_bloom_inference(*args):
+def run__bell_bloom_inference_exp(*args):
     # Logger for storing errors and logs in separate file, creates separate folder
     logger = logging.getLogger(__name__)
     logger.info('Starting execution of run-bell-bloom-inference command.')
@@ -73,8 +71,7 @@ def run__bell_bloom_inference(*args):
         if args[0].cd_ekf:
             ekf = CD_Bell_Bloom_EKF(model_params=filter_params_ekf)
             # CREATE A TIME ARRAY AND COMPUTE SAMPLING FREQUENCY ====================================================
-            every_nth_z = int(filter_params_ekf.dt/simulation_params.dt)
-            time_arr_ekf = np.arange(0, simulation_params.t_max+filter_params_ekf.dt, filter_params_ekf.dt)
+            time_arr_ekf = df.time
 
             # CREATE A Estimator and Covariance and simulation at filter frequency ARRAY================================
             x_ekf_est = np.array([np.zeros_like(filter_params_ekf.x_0) for _ in time_arr_ekf])
@@ -86,17 +83,14 @@ def run__bell_bloom_inference(*args):
 
             index_ekf = 0
             for index, element in enumerate(tqdm.tqdm(df.zs, desc='pid:%r' % os.getpid())):
-                if index % every_nth_z == 0:
-                    ekf.predict_update(element/simulation_params.dt, Phi_Q_method=False)
-                    x_ekf_est[index_ekf] = ekf.x_est
-                    P_ekf_est[index_ekf] = ekf.P_est
-                    x_filter_freq[index_ekf] = np.array([df.x0s[index], df.x1s[index], df.x2s[index]])
+                ekf.predict_update(element, Phi_Q_method=False)
+                x_ekf_est[index_ekf] = ekf.x_est
+                P_ekf_est[index_ekf] = ekf.P_est
+                z_filter_freq[index_ekf] = element
+                if args[0].ekf_ss:
+                    P_ss[index_ekf] = ekf.steady_cov
 
-                    z_filter_freq[index_ekf] = element
-                    if args[0].ekf_ss:
-                        P_ss[index_ekf] = ekf.steady_cov
-
-                    index_ekf += 1
+                index_ekf += 1
 
             df_output = prepare_df(time_arr_ekf,
                                    xs=x_filter_freq,

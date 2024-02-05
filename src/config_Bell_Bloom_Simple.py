@@ -7,17 +7,18 @@ qx = 0.1
 qy = 0.1
 T2 = 1000.
 dt = 0.001
+pump_amplitude = 0.1
 
 config.simulation = {
     't_max':  40.,
     'dt': dt,
     'dim_measurement': 1,
-    'omega_pumping': 2.,
+    'omega_pumping': 1.,
     'num_atoms': numAtoms,
-    'pump_rate': 0.001,
+    'pump_amplitude': pump_amplitude,
     'T2': T2,
     'frequency_decay_rate': 0.0,  # frequency can behave according to OU process
-    'x_0': np.array([0., numAtoms/2., 2.]),  # initial state vector [Jx, Jy, omega]
+    'x_0': np.array([0., numAtoms/2., 1.]),  # initial state vector [Jx, Jy, omega]
     't_0': 0,
     'noise': {'Q_jx': qx*numAtoms/T2,
               'Q_jy': qy*numAtoms/T2,
@@ -32,13 +33,13 @@ config.simulation = {
 config.filter_ekf = {
     'dt': 5*dt,
     'T2': T2,
-    'omega_pumping': 2.,
+    'omega_pumping': 1.,
     'numAtoms': numAtoms,
     'num_atoms': numAtoms,
-    'pump_rate': 0.001,
+    'pump_amplitude': pump_amplitude,
     'frequency_decay_rate': 0.0,
     'inference_method': 'RK23',
-    'x_0': np.array([0., numAtoms/2, 2.]),
+    'x_0': np.array([0., numAtoms/2, 1.]),
     't_0': 0.,
     'P0': np.array([[qx*numAtoms/T2, 0., 0.],
                     [0., qy*numAtoms/T2, 0.],

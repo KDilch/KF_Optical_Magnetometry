@@ -43,10 +43,9 @@ class Bell_Bloom_Magnetometer_Model(Model):
         return self._x, self._z
 
     def __pump_rate(self, t):
-        if np.abs(np.cos(self.omega_pump * t) - 1) < np.cos(self.omega_pump * 0.9*self.period_pump):
-            return 1.
+        if np.abs(np.cos(self.omega_pump * t) - 1) < np.cos(self.omega_pump * 0.9 * self.period_pump):
+            return self._params.pump_amplitude
         return 0
-
         # return 1.
         # if (t > (self.n*self.period_pump - self.half_pump_duration)) and (
         #         t < (self.n*self.period_pump + self.half_pump_duration)):

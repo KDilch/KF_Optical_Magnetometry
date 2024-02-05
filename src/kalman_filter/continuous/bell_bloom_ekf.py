@@ -12,13 +12,12 @@ class BellBloomEKF(EKF):
         self._F = self.F(self._x, self._t, model_params)
         self._steady_cov = None
 
-
     @property
     def steady_cov(self):
         return self._steady_cov
     @staticmethod
     def F(x, t, model_params):
-        return np.array([[-1./(model_params.T2), x[2], x[1]],
+        return np.array([[-(1./model_params.T2)-BellBloomEKF.pump_rate(t, model_params), x[2], x[1]],
                          [-x[2], -1./model_params.T2-BellBloomEKF.pump_rate(t, model_params), -x[0]],
                          [0.0, 0.0, 0.0]])
 
@@ -31,16 +30,16 @@ class BellBloomEKF(EKF):
         return steady_cov
 
     @staticmethod
-    def pump_rate(t, model_params, eps=1e-2):
+    def pump_rate(t, model_params):
         period_pump = (2 * np.pi / model_params.omega_pumping)
-        if np.abs(np.cos(model_params.omega_pumping * t) - 1) < np.cos(model_params.omega_pumping * 0.9*period_pump):
-            return 1.
+        if np.abs(np.cos(model_params.omega_pumping * t) - 1) < np.cos(model_params.omega_pumping * 0.9 * period_pump):
+            return model_params.pump_amplitude
         return 0
 
     @staticmethod
     def fx(x_0, t, model_params):
         dx_dt = np.zeros(3)
-        dx_dt[0] = - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        dx_dt[0] = - (1/model_params.T2) * x_0[0] + x_0[1] * x_0[2] - BellBloomEKF.pump_rate(t, model_params)*x_0[0]
         dx_dt[1] = - (1/model_params.T2) * x_0[1] - x_0[0] * x_0[2] + BellBloomEKF.pump_rate(t, model_params)*(model_params.num_atoms/2-x_0[1])
         dx_dt[2] = 0
         return dx_dt
@@ -67,6 +66,7 @@ class BellBloomEKF(EKF):
                       np.reshape(self._P, self._dim_x**2),
                       method=self.model_params.inference_method,
                       dense_output=True,
+                      max_step=0.00001,
                        args=(self._x,
                              self._K,
                                   self._H,
@@ -79,6 +79,7 @@ class BellBloomEKF(EKF):
                           self._x,
                           method=self.model_params.inference_method,
                           dense_output=True,
+                          max_step=0.0001,
                           args=(self._K,
                                 self._y,
                                 self._dt,

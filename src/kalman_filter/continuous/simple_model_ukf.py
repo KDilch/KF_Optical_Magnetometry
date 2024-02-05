@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 from filterpy.kalman.UKF import UnscentedKalmanFilter
-from filterpy.kalman import JulierSigmaPoints
+from filterpy.kalman import MerweScaledSigmaPoints
 
 
 class SimpleMagnetometerUKF(object):
@@ -10,7 +10,7 @@ class SimpleMagnetometerUKF(object):
         self._dim_z = 1
         self.H = model_params.measurement.H
         self._x = model_params.x_0
-        self.sigmas = JulierSigmaPoints(n=self._dim_x)
+        self.sigma_points_generator = MerweScaledSigmaPoints(n=self._dim_x, alpha=1e-3, beta=2., kappa=3-self._dim_x)
         self.ukf = UnscentedKalmanFilter(self._dim_x, self._dim_z, model_params.dt, self.hx, self.fx, self.sigmas)
         self.model_params = model_params
 

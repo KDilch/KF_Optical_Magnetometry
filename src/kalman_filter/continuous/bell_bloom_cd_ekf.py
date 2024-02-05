@@ -16,14 +16,14 @@ class CD_Bell_Bloom_EKF(EKF):
 
     @staticmethod
     def F(x, t, model_params):
-        return np.array([[-1./(model_params.T2), x[2], x[1]],
+        return np.array([[-1./(model_params.T2)-CD_Bell_Bloom_EKF.pump_rate(t, model_params), x[2], x[1]],
                          [-x[2], -1./model_params.T2-CD_Bell_Bloom_EKF.pump_rate(t, model_params), -x[0]],
                          [0.0, 0.0, 0.0]])
 
     @staticmethod
     def fx(x_0, t, model_params):
         dx_dt = np.zeros(3)
-        dx_dt[0] = - (1 / model_params.T2) * x_0[0] + x_0[1] * x_0[2]
+        dx_dt[0] = - (1 / model_params.T2) * x_0[0] + x_0[1] * x_0[2] - CD_Bell_Bloom_EKF.pump_rate(t, model_params)*x_0[0]
         dx_dt[1] = - (1 / model_params.T2) * x_0[1] - x_0[0] * x_0[2] + CD_Bell_Bloom_EKF.pump_rate(t, model_params) * (
                     model_params.num_atoms / 2 - x_0[1])
         dx_dt[2] = 0
@@ -43,9 +43,11 @@ class CD_Bell_Bloom_EKF(EKF):
                           dim_x ** 2)
 
     @staticmethod
-    def pump_rate(t, model_params, eps=1e-1):
-        if np.cos(model_params.omega_pumping * t) - 1 < eps:
-            return model_params.pump_rate
+    def pump_rate(t, model_params):
+        period_pump = (2 * np.pi / model_params.omega_pumping)
+        treshhold = np.cos(model_params.omega_pumping * 0.9 * period_pump)
+        if np.abs(np.cos(model_params.omega_pumping * t) - 1) < treshhold:
+            return model_params.pump_amplitude
         return 0
 
     def predict(self, Phi_Q_method=False):
@@ -54,6 +56,7 @@ class CD_Bell_Bloom_EKF(EKF):
                           np.reshape(self._P, self._dim_x ** 2),
                           method=self.model_params.inference_method,
                           dense_output=True,
+                          max_step=0.00001,
                           args=(self._x,
                                 self._Q,
                                 self._dim_x,
@@ -64,6 +67,7 @@ class CD_Bell_Bloom_EKF(EKF):
                           self._x,
                           method=self.model_params.inference_method,
                           dense_output=True,
+                          max_step=0.0001,
                           args=(self._dim_x, self.model_params))
         x = x_sol.sol(self._t + self._dt)
         self._x = x

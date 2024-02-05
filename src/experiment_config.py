@@ -6,12 +6,12 @@ numAtoms = 8.2 * 10. ** 12
 qx = 0.002
 qy = 0.002
 T2 = 0.87  # in ms
-dt_sim = 5. * 10 ** (-6)  # in ms # 1. * 10 ** (-6)->also have this simulation
+dt_sim = 5. * 10 ** (-6)  # in ms # 1.* 10 ** (-6)->also have this simulation
 dt_exp = 5. * 10 ** (-4)  # in ms
-t_max = 1.  # in ms
-omega_B_initial = 2 * np.pi * 5.0  # 28.969  # in kHz
-omega_pump = 2 * np.pi * 5.0  # 28.969  # in kHz
-pump_amplitude = 100.
+t_max = 0.43  # in ms
+omega_B_initial = 2 * np.pi * 29.07  # in kHz
+omega_pump = 2 * np.pi * 29.07  # in kHz
+pump_amplitude = 100. #check with theory ? power
 measurement_scaling_factor = 0.00000000176656  # gain_scale^(-1)
 R = 0.0096
 
@@ -36,13 +36,13 @@ config.simulation = {
 }
 
 config.filter_ekf = {
-    'dt': 100*dt_sim,
+    'dt': dt_exp,
     'T2': T2,
     'omega_pumping': omega_pump,
     'pump_amplitude': pump_amplitude,
     'num_atoms': numAtoms,
     'inference_method': 'RK23',
-    'x_0': np.array([0., numAtoms / 2, omega_B_initial+0.5]),
+    'x_0': np.array([0., numAtoms / 2, omega_B_initial]),
     't_0': 0.,
     'P0': np.array([[qx * numAtoms / T2, 0., 0.],
                     [0., qy * numAtoms / T2, 0.],

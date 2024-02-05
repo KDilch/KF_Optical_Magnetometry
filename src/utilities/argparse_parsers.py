@@ -13,6 +13,7 @@ from run_magnetometer_corr import run__magnetometer_corr
 from run_10x10 import run__10x10_corr
 from run_inference import run__magnetometer_inference
 from bell_bloom_inference import run__bell_bloom_inference
+from bell_bloom_experiment import run__bell_bloom_inference_exp
 
 def initialize_parsers():
     # create the top-level parser
@@ -299,6 +300,10 @@ def initialize_parsers():
                                         action='store_true',
                                         help='Bool specifying if you want to save the data files.',
                                         default=False)
+    simulation_parser_inference.add_argument('--cc_ukf',
+                                             action='store_true',
+                                             help='Bool specifying if you want to save the data files.',
+                                             default=False)
     simulation_parser_inference.add_argument('--fft',
                                         action='store_true',
                                         help='Bool specifying if you want to save the data files.',
@@ -453,5 +458,47 @@ def initialize_parsers():
                                              help='A string representing a method used to solve SDEs. Default is Euler-Muyurama.',
                                              default='default')
     simulation_parser_inference.set_defaults(func=run__bell_bloom_inference)
+
+    # RUN Bell-Bloom INFERENCE EXP DATA=====================================================================================================
+    simulation_parser_inference = subparsers.add_parser('run-bell-bloom-inference-exp',
+                                                        help='Run atomic sensor simple model correlated simulation')
+    simulation_parser_inference.add_argument('-o',
+                                             '--output_path',
+                                             action='store',
+                                             help='A string representing path where the output should be saved.',
+                                             default='./')
+    simulation_parser_inference.add_argument('--data_path',
+                                             action='store',
+                                             help='A string representing a module name of a data file. Data file is a csv file.',
+                                             default='./')
+    simulation_parser_inference.add_argument('--config',
+                                             action='store',
+                                             help='A string representing a module name of a config file. Config is a python file.',
+                                             default='config')
+    simulation_parser_inference.add_argument('--cc_ekf',
+                                             action='store_true',
+                                             help='Bool specifying if you want to run continuous-continuous kalman filter.',
+                                             default=False)
+    simulation_parser_inference.add_argument('--cd_ekf',
+                                             action='store_true',
+                                             help='Bool specifying if you want to run continuous-discrete kalman filter.',
+                                             default=False)
+    simulation_parser_inference.add_argument('--ekf_ss',
+                                             action='store_true',
+                                             help='Bool specifying if you want to run continuous-discrete kalman filter.',
+                                             default=False)
+    simulation_parser_inference.add_argument('--save_data',
+                                             action='store_true',
+                                             help='Bool specifying if you want to save the data files.',
+                                             default=False)
+    simulation_parser_inference.add_argument('--save_plots',
+                                             action='store_true',
+                                             help='Bool specifying if you want to save the plots.',
+                                             default=False)
+    simulation_parser_inference.add_argument('--method',
+                                             action='store',
+                                             help='A string representing a method used to solve SDEs. Default is Euler-Muyurama.',
+                                             default='default')
+    simulation_parser_inference.set_defaults(func=run__bell_bloom_inference_exp)
 
     return parser
