@@ -279,7 +279,7 @@ def initialize_parsers():
     simulation_parser_inference.add_argument('--data_path',
                                         action='store',
                                         help='A string representing a module name of a data file. Data file is a csv file.',
-                                        default='./')
+                                        default='C:/Users/Klaudia/Documents/simple_sim_PB_dt1mus/csv/')
     simulation_parser_inference.add_argument('--config',
                                         action='store',
                                         help='A string representing a module name of a config file. Config is a python file.',

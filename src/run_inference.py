@@ -36,10 +36,10 @@ def run__magnetometer_inference(*args):
         df = pd.read_csv(file)
         if args[0].cc_ekf:
             ekf = MagnetometerEKF(model_params=filter_params_ekf)
-            MLE_obj = MLE_omega(filter_params_ekf.numAtoms,
-                                  filter_params_ekf.T2,
-                                  filter_params_ekf.noise.Q[1][1]+filter_params_ekf.measurement.R[0][0],
-                                  filter_params_ekf.dt, filter_params_ekf.dt)
+            # MLE_obj = MLE_omega(filter_params_ekf.numAtoms,
+            #                       filter_params_ekf.T2,
+            #                       filter_params_ekf.noise.Q[1][1]+filter_params_ekf.measurement.R[0][0],
+            #                       filter_params_ekf.dt, filter_params_ekf.dt)
             # CREATE A TIME ARRAY====================================================
             time_arr = np.arange(0, simulation_params.t_max, simulation_params.dt)
 
@@ -165,6 +165,8 @@ def run__magnetometer_inference(*args):
                                    autocorr_freq=autocorr_est_Larmour,
                                    periodogram=periodogram_est_Larmour,
                                    ipfft_freq=ipfft_est_Larmour)
+
+            print(df_output.tail())
 
             if args[0].save_data:
                 save_data_simple_simulation(df_output, simulation_params, args[0].output_path +

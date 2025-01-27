@@ -20,6 +20,7 @@ def run__Bell_Bloom(*args):
     logger.info('Starting execution of run-frequency-extractor command.')
 
     logger.info('Loading a config file from path %r' % args[0].config)
+    import os
     config = import_config_from_path(args[0].config)
     simulation_params = DefaultMunch.fromDict(deepcopy(config.simulation))
     filter_params_ekf = DefaultMunch.fromDict(deepcopy(config.filter_ekf))
