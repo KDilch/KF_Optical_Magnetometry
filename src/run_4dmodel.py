@@ -57,7 +57,6 @@ def run__magnetometer4d(*args):
     simulation_dynamical_model = Simple_Sensor_Model(t=0,
                                                      simulation_params=simulation_params)
     ekf = MagnetometerEKF(model_params=filter_params_ekf)
-    from kalman_filter.continuous.simple_model_ukf import SimpleMagnetometerUKF
 
     # ALLOCATE MEMORY FOR THE ARRAYS=====================================================
     xs = np.array([np.zeros_like(simulation_params.x_0) for _ in time_arr])

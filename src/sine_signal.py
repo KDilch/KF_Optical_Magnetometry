@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from scipy import signal
 
 from freq_inference import ipFFT
-from utilities.savitzky_golay_filter import savitzky_golay, smooth_data_np_average
 
 # Define the signal parameters
 is_ipFFT = False

@@ -35,12 +35,8 @@ class CD_EKF(EKF):
 
     @staticmethod
     def dP_dt(t, P, x, Q, dim_x, model_params):
-        return np.reshape(np.dot(CD_EKF.F(x, t, model_params),
-                                 np.reshape(P, (dim_x, dim_x))) + np.dot(np.reshape(P, (dim_x, dim_x)),
-                                                                         np.transpose(CD_EKF.F(x,
-                                                                                               t,
-                                                                                               model_params))) + Q,
-                          dim_x ** 2)
+        P_matrix = np.reshape(P, (dim_x, dim_x))
+        return np.reshape(CD_EKF.F(x, t) @ P_matrix + P_matrix @ F(x, t).T + Q, dim_x ** 2)
 
     def predict(self, Phi_Q_method=False):
         if Phi_Q_method:
