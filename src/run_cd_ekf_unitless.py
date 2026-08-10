@@ -168,43 +168,41 @@ def generate_plots_and_report(
     plt.savefig(coord_plot_path, dpi=150)
     plt.close()
 
-    # --- Plot 2: Estimation Errors & 3-Sigma Bounds ---
+    # --- Plot 2: Estimation Errors & 3-Sigma Bounds (Omega Only) ---
     err = x_est - x_sim_meas
     sigma = np.sqrt(P_est)
     
-    fig, axs = plt.subplots(3, 1, layout='constrained', figsize=(9, 9))
-    labels = ['J_y error', 'J_z error', 'omega error']
-    scalings = [xc, xc, T2]
+    fig_err, ax_e = plt.subplots(layout='constrained', figsize=(9, 5))
     
-    for i in range(3):
-        scaling = scalings[i]
-        err_scaled = err[:, i] / scaling
-        sigma_scaled = sigma[:, i] / scaling
-        
-        axs[i].plot(t_meas * T2 * 1e3, err_scaled, label='Error', color='purple')
-        axs[i].fill_between(
-            t_meas * T2 * 1e3, 
-            -3 * sigma_scaled, 
-            3 * sigma_scaled, 
-            color='purple', 
-            alpha=0.15, 
-            label='+- 3-sigma covariance bounds'
-        )
-        axs[i].set_ylabel(labels[i])
-        axs[i].grid(True)
-        
-    for ax in axs:
-        ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
-        ax.legend()
-        
-    axs[2].set_xlabel('Time (ms)')
-    plt.suptitle(f"Estimation Errors and Covariance Bounds (type={configurator.sim_type})")
+    # Omega error index is 2
+    err_scaled = err[:, 2] / T2
+    sigma_scaled = sigma[:, 2] / T2
+    
+    ax_e.plot(t_meas * T2 * 1e3, err_scaled, label='Omega Error', color='purple')
+    ax_e.fill_between(
+        t_meas * T2 * 1e3, 
+        -3 * sigma_scaled, 
+        3 * sigma_scaled, 
+        color='purple', 
+        alpha=0.15, 
+        label='+- 3-sigma covariance bounds'
+    )
+    ax_e.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+    ax_e.set_ylabel('omega error')
+    ax_e.set_xlabel('Time (ms)')
+    ax_e.grid(True)
+    ax_e.legend()
+    
+    plt.suptitle(f"Larmor Frequency (omega) Estimation Error (type={configurator.sim_type})")
     error_plot_path = os.path.join(output_dir, 'errors_plot.png')
     plt.savefig(error_plot_path, dpi=150)
     plt.close()
 
     # --- Generate Markdown Report ---
-    report_path = os.path.join(output_dir, 'report.md')
+    type_str = configurator.sim_type if configurator.sim_type is not None else "constant_omega"
+    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}"
+    
+    report_path = os.path.join(output_dir, f"{report_base}.md")
     abs_sim_path = os.path.abspath(os.path.join(output_dir, 'simulation_data.npz'))
     abs_inf_path = os.path.abspath(os.path.join(output_dir, 'inference_data.npz'))
     
@@ -245,14 +243,14 @@ def generate_plots_and_report(
 ### Tracking Coordinates (Simulated vs Estimated)
 ![Coordinates Tracking](coordinates_plot.png)
 
-### Estimation Errors with $\pm 3\sigma$ Covariance Bounds
+### Estimation Errors with $\pm 3\sigma$ Covariance Bounds (Omega Only)
 ![Estimation Errors](errors_plot.png)
 """
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(report_content)
         
     # --- Generate PDF Report ---
-    pdf_path = os.path.join(output_dir, 'report.pdf')
+    pdf_path = os.path.join(output_dir, f"{report_base}.pdf")
     with PdfPages(pdf_path) as pdf:
         # Page 1: Text Metadata Report
         fig_text = plt.figure(figsize=(8.5, 11))
@@ -316,34 +314,24 @@ def generate_plots_and_report(
         pdf.savefig(fig_coord)
         plt.close(fig_coord)
         
-        # Page 3: Errors Plot
-        fig_err, axs_e = plt.subplots(3, 1, layout='constrained', figsize=(8.5, 11))
-        labels = ['J_y error', 'J_z error', 'omega error']
-        scalings = [xc, xc, T2]
+        # Page 3: Errors Plot (Omega Only)
+        fig_err, ax_pe = plt.subplots(layout='constrained', figsize=(8.5, 11))
+        ax_pe.plot(t_meas * T2 * 1e3, err_scaled, label='Omega Error', color='purple')
+        ax_pe.fill_between(
+            t_meas * T2 * 1e3, 
+            -3 * sigma_scaled, 
+            3 * sigma_scaled, 
+            color='purple', 
+            alpha=0.15, 
+            label='+- 3-sigma covariance bounds'
+        )
+        ax_pe.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+        ax_pe.set_ylabel('omega error')
+        ax_pe.set_xlabel('Time (ms)')
+        ax_pe.grid(True)
+        ax_pe.legend()
         
-        for i in range(3):
-            scaling = scalings[i]
-            err_scaled = err[:, i] / scaling
-            sigma_scaled = sigma[:, i] / scaling
-            
-            axs_e[i].plot(t_meas * T2 * 1e3, err_scaled, label='Error', color='purple')
-            axs_e[i].fill_between(
-                t_meas * T2 * 1e3, 
-                -3 * sigma_scaled, 
-                3 * sigma_scaled, 
-                color='purple', 
-                alpha=0.15, 
-                label='+- 3-sigma covariance bounds'
-            )
-            axs_e[i].set_ylabel(labels[i])
-            axs_e[i].grid(True)
-            
-        for ax in axs_e:
-            ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
-            ax.legend()
-            
-        axs_e[2].set_xlabel('Time (ms)')
-        fig_err.suptitle(f"Estimation Errors and Covariance Bounds (type={configurator.sim_type})")
+        fig_err.suptitle(f"Larmor Frequency (omega) Estimation Error (type={configurator.sim_type})")
         pdf.savefig(fig_err)
         plt.close(fig_err)
         
@@ -395,7 +383,10 @@ def run_pipeline(
     # Step 3: Plots and Report Generation
     generate_plots_and_report(configurator, sim_data, inf_data, output_dir)
     
-    return output_dir
+    type_str = configurator.sim_type if configurator.sim_type is not None else "constant_omega"
+    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}"
+    
+    return output_dir, report_base
 
 
 if __name__ == "__main__":
@@ -409,9 +400,9 @@ if __name__ == "__main__":
     )
     
     # Run the full pipeline (both SDE simulation and EKF inference)
-    result_dir = run_pipeline(
+    result_dir, report_name = run_pipeline(
         configurator=config, 
         num_steps=20,
         output_dir="runs/run_until_2t2"
     )
-    print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, 'report.md'))}")
+    print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
