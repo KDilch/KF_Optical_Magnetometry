@@ -390,11 +390,11 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    # Configure parameter mapping with final time tf equal to 2*T2 (1.74 ms)
+    # Configure parameter mapping with final time tf equal to 2*T2 (1.74 ms) for OU simulation
     config = UnitlessSimpleMagnetometerConfigurator(
-        sim_type=None,
+        sim_type="OU",
         tf=1.74,
-        dc=0.0,
+        dc=0.01,
         tau=1e3,
         measure_every_nth=100
     )
