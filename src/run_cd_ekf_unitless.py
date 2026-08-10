@@ -11,20 +11,9 @@ from kalman_filter.unitless_cd_ekf import CD_EKF_unitless_magnetometer
 
 
 def run_unitless_magnetometer_simulation_and_ekf(
-    sim_type=None,
-    tf=2.0,
-    dc=0.01,
-    tau=0.001,
-    num_steps=20,
-    measure_every_nth=100,
+    configurator: UnitlessSimpleMagnetometerConfigurator = None,
     save_path=None,
-    N=0.44 * 1e12,
-    q=0.198,
-    T2=0.87 * 1e-3,
-    g_D=0.00177,
-    Sph=96.0,
-    w0=2 * np.pi * 1e4,
-    h=50 * 1e-9
+    num_steps=20
 ):
     """
     OO execution of unitless simulation and continuous-discrete EKF.
@@ -33,15 +22,16 @@ def run_unitless_magnetometer_simulation_and_ekf(
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
-    configurator = UnitlessSimpleMagnetometerConfigurator(
-        N=N, q=q, T2=T2, g_D=g_D, Sph=Sph, w0=w0, h=h, tf=tf, dc=dc, tau=tau,
-        measure_every_nth=measure_every_nth, sim_type=sim_type
-    )
+    if configurator is None:
+        configurator = UnitlessSimpleMagnetometerConfigurator()
+        
     sim_params = configurator.get_sim_params()
     h1 = configurator.h1
-    t_max = tf / (configurator.T2 * 1e3)
+    t_max = configurator.tf / (configurator.T2 * 1e3)
     xc = configurator.xc
     T2 = configurator.T2
+    measure_every_nth = configurator.measure_every_nth
+    sim_type = configurator.sim_type
     
     # 2. Initialize the OO Simulation Model
     model = UnitlessMagnetometerModel(t=0.0, simulation_params=sim_params, logger=logger)
@@ -128,4 +118,11 @@ def run_unitless_magnetometer_simulation_and_ekf(
 
 if __name__ == "__main__":
     # Example: Run EKF for an Ornstein-Uhlenbeck process signal
-    run_unitless_magnetometer_simulation_and_ekf(sim_type="OU", tf=1.0, dc=1e-2, tau=1e3, num_steps=20, measure_every_nth=100)
+    config = UnitlessSimpleMagnetometerConfigurator(
+        sim_type="OU",
+        tf=1.0,
+        dc=1e-2,
+        tau=1e3,
+        measure_every_nth=100
+    )
+    run_unitless_magnetometer_simulation_and_ekf(configurator=config, num_steps=20)
