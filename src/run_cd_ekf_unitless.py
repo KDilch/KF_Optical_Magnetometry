@@ -296,11 +296,11 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    # Example: Run EKF for an Ornstein-Uhlenbeck process signal with automated reporting
+    # Example: Run EKF for a constant omega signal (sim_type=None) with automated reporting
     config = UnitlessSimpleMagnetometerConfigurator(
-        sim_type="OU",
+        sim_type=None,
         tf=0.1,
-        dc=1e-2,
+        dc=0.0,
         tau=1e3,
         measure_every_nth=100
     )
