@@ -10,22 +10,28 @@ from space_state_model.unitless_magnetometer_model import UnitlessMagnetometerMo
 from kalman_filter.unitless_cd_ekf import CD_EKF_unitless_magnetometer
 
 
-def run_unitless_magnetometer_simulation_and_ekf(sim_type=None, tf=2.0, dc=0.01, tau=0.001, num_steps=20, measure_every_nth=100, save_path=None):
+def run_unitless_magnetometer_simulation_and_ekf(
+    sim_type=None,
+    tf=2.0,
+    dc=0.01,
+    tau=0.001,
+    num_steps=20,
+    measure_every_nth=100,
+    save_path=None,
+    N=0.44 * 1e12,
+    q=0.198,
+    T2=0.87 * 1e-3,
+    g_D=0.00177,
+    Sph=96.0,
+    w0=2 * np.pi * 1e4,
+    h=50 * 1e-9
+):
     """
     OO execution of unitless simulation and continuous-discrete EKF.
     Supports sim_type: None, "OU", "jump", "sine"
     """
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    
-    # 1. Physics & Simulation parameters
-    N = 0.44 * 1e12
-    q = 0.198
-    T2 = 0.87 * 1e-3
-    g_D = 0.00177
-    Sph = 96
-    w0 = 2 * np.pi * 1e4
-    h = 50 * 1e-9
     
     configurator = UnitlessSimpleMagnetometerConfigurator(
         N=N, q=q, T2=T2, g_D=g_D, Sph=Sph, w0=w0, h=h, tf=tf, dc=dc, tau=tau,
