@@ -133,6 +133,8 @@ def generate_plots_and_report(
     x_est = inf_data['x_est']
     P_est = inf_data['P_est']
 
+    t2_ms = T2 * 1e3
+
     # --- Plot 1: Coordinates Plot (Sim vs EKF) ---
     fig, axs = plt.subplots(3, 1, layout='constrained', figsize=(9, 9))
     
@@ -141,7 +143,6 @@ def generate_plots_and_report(
     axs[0].plot(t_meas * T2 * 1e3, x_est[:, 0] / xc, '--', label='EKF J_y', color='orange')
     axs[0].set_ylabel('J_y')
     axs[0].grid(True)
-    axs[0].legend()
     
     # Jz plot
     axs[1].plot(time_arr * T2 * 1e3, xs[:, 1] / xc, label='Sim J_z', color='C0')
@@ -149,7 +150,6 @@ def generate_plots_and_report(
     axs[1].scatter(t_meas * T2 * 1e3, yh / xc, color='red', alpha=0.3, s=5, label='Meas (noisy)')
     axs[1].set_ylabel('J_z')
     axs[1].grid(True)
-    axs[1].legend()
     
     # Frequency plot
     axs[2].plot(time_arr * T2 * 1e3, xs[:, 2] / T2, label='Sim omega', color='C0')
@@ -157,7 +157,10 @@ def generate_plots_and_report(
     axs[2].set_ylabel('omega')
     axs[2].set_xlabel('Time (ms)')
     axs[2].grid(True)
-    axs[2].legend()
+    
+    for ax in axs:
+        ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+        ax.legend()
     
     plt.suptitle(f"Unitless Magnetometer EKF Tracking (type={configurator.sim_type})")
     coord_plot_path = os.path.join(output_dir, 'coordinates_plot.png')
@@ -188,7 +191,10 @@ def generate_plots_and_report(
         )
         axs[i].set_ylabel(labels[i])
         axs[i].grid(True)
-        axs[i].legend()
+        
+    for ax in axs:
+        ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+        ax.legend()
         
     axs[2].set_xlabel('Time (ms)')
     plt.suptitle(f"Estimation Errors and Covariance Bounds (type={configurator.sim_type})")
@@ -296,7 +302,10 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    # Example: Run EKF for a constant omega signal (sim_type=None) with automated reporting
+    # Path to the simulation data file to load
+    data_file = "runs/run_20260810_122018/simulation_data.npz"
+    
+    # Configure parameter mapping
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type=None,
         tf=0.1,
@@ -304,5 +313,11 @@ if __name__ == "__main__":
         tau=1e3,
         measure_every_nth=100
     )
-    result_dir = run_pipeline(configurator=config, num_steps=20)
+    
+    # Execute only the EKF inference step on the loaded data file
+    result_dir = run_pipeline(
+        configurator=config, 
+        data_input_path=data_file, 
+        output_dir="runs/run_inference_only"
+    )
     print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, 'report.md'))}")
