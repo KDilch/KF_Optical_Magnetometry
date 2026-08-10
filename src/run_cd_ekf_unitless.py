@@ -389,8 +389,25 @@ def run_pipeline(
     return output_dir, report_base
 
 
-if __name__ == "__main__":
-    # Configure parameter mapping with final time tf equal to 2*T2 (1.74 ms) for OU simulation
+def run_constant_omega_case():
+    """Runs a full simulation and EKF inference for constant Larmor frequency (omega)."""
+    config = UnitlessSimpleMagnetometerConfigurator(
+        sim_type=None,
+        tf=1.74,
+        dc=0.0,
+        tau=1e3,
+        measure_every_nth=100
+    )
+    result_dir, report_name = run_pipeline(
+        configurator=config,
+        num_steps=20,
+        output_dir="runs/run_constant_omega"
+    )
+    print(f"Constant Omega pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
+
+
+def run_ou_process_case():
+    """Runs a full simulation and EKF inference for an Ornstein-Uhlenbeck Larmor frequency process."""
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type="OU",
         tf=1.74,
@@ -398,11 +415,19 @@ if __name__ == "__main__":
         tau=1e3,
         measure_every_nth=100
     )
-    
-    # Run the full pipeline (both SDE simulation and EKF inference)
     result_dir, report_name = run_pipeline(
-        configurator=config, 
+        configurator=config,
         num_steps=20,
-        output_dir="runs/run_until_2t2"
+        output_dir="runs/run_ou_process"
     )
-    print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
+    print(f"OU Process pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
+
+
+if __name__ == "__main__":
+    # Uncomment the simulation case you want to execute:
+    
+    # 1. Constant Larmor frequency (omega) simulation and EKF tracking
+    # run_constant_omega_case()
+    
+    # 2. OU Larmor frequency process simulation and EKF tracking
+    run_ou_process_case()
