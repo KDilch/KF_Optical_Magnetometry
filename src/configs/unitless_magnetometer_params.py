@@ -36,6 +36,7 @@ class UnitlessFilterParams:
     P0: np.ndarray
     noise: FilterNoiseParams
     measurement: FilterMeasurementParams
+    max_step: float = None
 
 @dataclass
 class UnitlessSimpleMagnetometerConfigurator:
@@ -130,6 +131,9 @@ class UnitlessSimpleMagnetometerConfigurator:
         ])
         Q_filter = np.diag([2.0, 2.0, filter_dc])
 
+        factor = 200.0 if self.sim_type == "OU" else 20.0
+        max_step = self.meas_probing_rate_unitless / (self.measure_every_nth * factor)
+
         return UnitlessFilterParams(
             x_0=x0_filter,
             t_0=0.0,
@@ -145,5 +149,6 @@ class UnitlessSimpleMagnetometerConfigurator:
                 H=np.array([[0.0, 1.0, 0.0]]),
                 measurement_strength=1.0,
                 R=np.array([[self.sig_v ** 2]])
-            )
+            ),
+            max_step=max_step
         )

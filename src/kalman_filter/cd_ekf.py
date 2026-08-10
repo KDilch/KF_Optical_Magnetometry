@@ -49,11 +49,13 @@ class CD_EKF(object):
                           dim_x ** 2)
 
     def predict(self):
+        max_step = getattr(self.model_params, 'max_step', None)
         P_sol = solve_ivp(CD_EKF.dP_dt,
                           [self._t, self._t + self._dt],
                           np.reshape(self._P, self._dim_x ** 2),
                           method=self.model_params.inference_method,
                           dense_output=True,
+                          max_step=max_step,
                           args=(self._x,
                                 self._Q,
                                 self._dim_x,
@@ -65,6 +67,7 @@ class CD_EKF(object):
                           self._x,
                           method=self.model_params.inference_method,
                           dense_output=True,
+                          max_step=max_step,
                           args=(self._dim_x, self.model_params, self.__class__))
         x = x_sol.sol(self._t + self._dt)
         self._x = x

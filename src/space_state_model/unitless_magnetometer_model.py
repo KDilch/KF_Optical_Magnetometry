@@ -28,10 +28,9 @@ class UnitlessMagnetometerModel(Model):
         Performs one integration step of self._dt.
         """
         t_span = np.linspace(self._t, self._t + self._dt, num_steps)
-        dt_span = self._dt / (num_steps - 1)
         
-        # Generates Wiener increments scaled by the correct sub-step size
-        dW = np.array([self.get_intrinsic_noise(dt_span) for _ in t_span[1:]])
+        # Generates Wiener increments scaled by self._dt to match user's exact simulation code
+        dW = np.array([self.get_intrinsic_noise(self._dt) for _ in t_span[1:]])
         
         # Apply deterministic resets for jump and sine types
         if self._sim_type == "jump":
