@@ -5,6 +5,7 @@ from datetime import datetime
 import numpy as np
 import tqdm
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 from configs.unitless_magnetometer_params import UnitlessSimpleMagnetometerConfigurator
 from space_state_model.unitless_magnetometer_model import UnitlessMagnetometerModel
@@ -250,7 +251,103 @@ def generate_plots_and_report(
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(report_content)
         
-    logger.info(f"Report and plots successfully generated in: {output_dir}")
+    # --- Generate PDF Report ---
+    pdf_path = os.path.join(output_dir, 'report.pdf')
+    with PdfPages(pdf_path) as pdf:
+        # Page 1: Text Metadata Report
+        fig_text = plt.figure(figsize=(8.5, 11))
+        fig_text.clf()
+        
+        text_content = (
+            "Unitless Magnetometer Simulation and EKF Run Report\n\n"
+            f"Date/Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Simulation Type: {configurator.sim_type}\n\n"
+            "Configuration Parameters:\n"
+            f"- Number of atoms (N): {configurator.N}\n"
+            f"- Parameter q: {configurator.q}\n"
+            f"- Relaxation time (T2): {configurator.T2} s\n"
+            f"- Coupling constant (g_D): {configurator.g_D} pA\n"
+            f"- Photon noise PSD (Sph): {configurator.Sph} pA^2/Hz\n"
+            f"- Mean Larmor frequency (w0): {configurator.w0} rad/s\n"
+            f"- Time step (h): {configurator.h} s\n"
+            f"- Probing rate factor (measure_every_nth): {configurator.measure_every_nth}\n"
+            f"- Diffusion constant (dc): {configurator.dc}\n"
+            f"- Relaxation time constant (tau): {configurator.tau}\n\n"
+            "Derived Unitless Parameters:\n"
+            f"- Effective atoms (Nq): {configurator.Nq}\n"
+            f"- State scaling (xc): {configurator.xc}\n"
+            f"- Measurement scaling (yc): {configurator.yc}\n"
+            f"- Measurement noise (sig_v): {configurator.sig_v}\n"
+            f"- Unitless step size (h1): {configurator.h1}\n"
+            f"- Unitless measurement interval: {configurator.meas_probing_rate_unitless}\n\n"
+            "Data Files Saved in Subfolder:\n"
+            "- Simulation Data: simulation_data.npz\n"
+            "- EKF Inference Data: inference_data.npz\n"
+        )
+        fig_text.text(0.1, 0.95, "Unitless Magnetometer Run Report", fontsize=16, fontweight='bold', va='top')
+        fig_text.text(0.1, 0.9, text_content, fontsize=10, fontfamily='monospace', va='top')
+        pdf.savefig(fig_text)
+        plt.close(fig_text)
+        
+        # Page 2: Coordinates Plot
+        fig_coord, axs_c = plt.subplots(3, 1, layout='constrained', figsize=(8.5, 11))
+        axs_c[0].plot(time_arr * T2 * 1e3, xs[:, 0] / xc, label='Sim J_y', color='C0')
+        axs_c[0].plot(t_meas * T2 * 1e3, x_est[:, 0] / xc, '--', label='EKF J_y', color='orange')
+        axs_c[0].set_ylabel('J_y')
+        axs_c[0].grid(True)
+        
+        axs_c[1].plot(time_arr * T2 * 1e3, xs[:, 1] / xc, label='Sim J_z', color='C0')
+        axs_c[1].plot(t_meas * T2 * 1e3, x_est[:, 1] / xc, '--', label='EKF J_z', color='orange')
+        axs_c[1].scatter(t_meas * T2 * 1e3, yh / xc, color='red', alpha=0.3, s=5, label='Meas (noisy)')
+        axs_c[1].set_ylabel('J_z')
+        axs_c[1].grid(True)
+        
+        axs_c[2].plot(time_arr * T2 * 1e3, xs[:, 2] / T2, label='Sim omega', color='C0')
+        axs_c[2].plot(t_meas * T2 * 1e3, x_est[:, 2] / T2, '--', label='EKF omega', color='orange')
+        axs_c[2].set_ylabel('omega')
+        axs_c[2].set_xlabel('Time (ms)')
+        axs_c[2].grid(True)
+        
+        for ax in axs_c:
+            ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+            ax.legend()
+            
+        fig_coord.suptitle(f"Unitless Magnetometer EKF Tracking (type={configurator.sim_type})")
+        pdf.savefig(fig_coord)
+        plt.close(fig_coord)
+        
+        # Page 3: Errors Plot
+        fig_err, axs_e = plt.subplots(3, 1, layout='constrained', figsize=(8.5, 11))
+        labels = ['J_y error', 'J_z error', 'omega error']
+        scalings = [xc, xc, T2]
+        
+        for i in range(3):
+            scaling = scalings[i]
+            err_scaled = err[:, i] / scaling
+            sigma_scaled = sigma[:, i] / scaling
+            
+            axs_e[i].plot(t_meas * T2 * 1e3, err_scaled, label='Error', color='purple')
+            axs_e[i].fill_between(
+                t_meas * T2 * 1e3, 
+                -3 * sigma_scaled, 
+                3 * sigma_scaled, 
+                color='purple', 
+                alpha=0.15, 
+                label='+- 3-sigma covariance bounds'
+            )
+            axs_e[i].set_ylabel(labels[i])
+            axs_e[i].grid(True)
+            
+        for ax in axs_e:
+            ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
+            ax.legend()
+            
+        axs_e[2].set_xlabel('Time (ms)')
+        fig_err.suptitle(f"Estimation Errors and Covariance Bounds (type={configurator.sim_type})")
+        pdf.savefig(fig_err)
+        plt.close(fig_err)
+        
+    logger.info(f"Report, PDF, and plots successfully generated in: {output_dir}")
 
 
 def run_pipeline(
@@ -302,10 +399,10 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    # Configure parameter mapping with final time tf equal to T2 (0.87 ms)
+    # Configure parameter mapping with final time tf equal to 2*T2 (1.74 ms)
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type=None,
-        tf=0.87,
+        tf=1.74,
         dc=0.0,
         tau=1e3,
         measure_every_nth=100
@@ -315,6 +412,6 @@ if __name__ == "__main__":
     result_dir = run_pipeline(
         configurator=config, 
         num_steps=20,
-        output_dir="runs/run_until_t2"
+        output_dir="runs/run_until_2t2"
     )
     print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, 'report.md'))}")
