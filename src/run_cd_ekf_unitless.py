@@ -302,22 +302,19 @@ def run_pipeline(
 
 
 if __name__ == "__main__":
-    # Path to the simulation data file to load
-    data_file = "runs/run_20260810_122018/simulation_data.npz"
-    
-    # Configure parameter mapping
+    # Configure parameter mapping with final time tf equal to T2 (0.87 ms)
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type=None,
-        tf=0.1,
+        tf=0.87,
         dc=0.0,
         tau=1e3,
         measure_every_nth=100
     )
     
-    # Execute only the EKF inference step on the loaded data file
+    # Run the full pipeline (both SDE simulation and EKF inference)
     result_dir = run_pipeline(
         configurator=config, 
-        data_input_path=data_file, 
-        output_dir="runs/run_inference_only"
+        num_steps=20,
+        output_dir="runs/run_until_t2"
     )
     print(f"Pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, 'report.md'))}")
