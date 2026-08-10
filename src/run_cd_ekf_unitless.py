@@ -410,7 +410,7 @@ def run_ou_process_case():
     """Runs a full simulation and EKF inference for an Ornstein-Uhlenbeck Larmor frequency process."""
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type="OU",
-        tf=1.74,
+        tf=0.2,
         dc=0.01,
         tau=1e3,
         measure_every_nth=100
