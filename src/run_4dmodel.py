@@ -9,7 +9,7 @@ import os
 
 from utilities.config_util import import_config_from_path
 from space_state_model.simple_sensor_model import Simple_Sensor_Model
-from kalman_filter.continuous.simple_model_ekf_improved import MagnetometerEKF
+from kalman_filter.simple_model_ekf_improved import MagnetometerEKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 

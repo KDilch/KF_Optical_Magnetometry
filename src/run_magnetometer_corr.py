@@ -9,7 +9,7 @@ import os
 
 from utilities.config_util import import_config_from_path
 from space_state_model.corr_simple_sensor_model import Simple_CC_Correlated_Sensor_Model
-from kalman_filter.continuous.corr_simple_model_ekf import CorrSimpleModelEKF
+from kalman_filter.corr_simple_model_ekf import CorrSimpleModelEKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 

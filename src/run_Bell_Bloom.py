@@ -5,11 +5,10 @@ import numpy as np
 from copy import deepcopy
 from munch import DefaultMunch
 import tqdm
-import os
 
 from utilities.config_util import import_config_from_path
 from space_state_model.Bell_Bloom_model import Bell_Bloom_Magnetometer_Model
-from kalman_filter.continuous.simple_model_ekf import MagnetometerEKF
+from kalman_filter.simple_model_ekf import MagnetometerEKF
 from plots import plot_simple_model
 from utilities.save_data import save_data_simple_simulation, prepare_df
 

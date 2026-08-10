@@ -20,8 +20,8 @@ h = 50 * 1e-9    # Time step is the solver time step not the probing time!whath 
 tf = 2.        # Final time in [ms]
 nsteps = int(tf * 1e-3 / h)  # Number of steps in simulation
 h1 = h / T2      # Time step in non-dimensional units
-dc = 0.0
-# dc = 0.01         # Diffusion constant of the OU process 0.01 for fluctuating
+# dc = 0.0
+dc = 0.01         # Diffusion constant of the OU process 0.01 for fluctuating
 tau = 0.001
 measure_every_nth = 1000
 meas_probing_rate = h*measure_every_nth  # in s
@@ -200,22 +200,22 @@ f_L = xs[:, 2] / (2 * np.pi * T2 * 1e3)  # [kHz]
 f_ud = (w0 * T2 + 3 * np.sqrt(dc) * np.array([-1, 1])) / (2 * np.pi * T2 * 1e3)  # 3σ bounds
 #
 # Plot Larmor frequency
-plt.plot(t_meas, x_est[:, 1], label='EKF')
-plt.plot(t, xs[:, 1], label='Jz')
-# plt.axhline(f_ud[0], linestyle='--', color='red', label='Lower Bound')
-# plt.axhline(f_ud[1], linestyle='--', color='green', label='Upper Bound')
-plt.xlabel('t [ms]')
-plt.ylabel('J_z')
-plt.title('Jz, OU process')
-plt.legend()
-plt.show()
-#
-plt.plot(t_meas, x_est[:, 0])
-plt.plot(t, xs[:, 0])
-plt.title('J_y')
-plt.legend()
-plt.show()
+# plt.plot(t_meas, x_est[:, 1], label='EKF')
+# plt.plot(t, xs[:, 1], label='Jz')
+# # plt.axhline(f_ud[0], linestyle='--', color='red', label='Lower Bound')
+# # plt.axhline(f_ud[1], linestyle='--', color='green', label='Upper Bound')
+# plt.xlabel('t [ms]')
+# plt.ylabel('J_z')
+# plt.title('Jz, OU process')
+# plt.legend()
+# plt.show()
+# #
+# plt.plot(t_meas, x_est[:, 0])
+# plt.plot(t, xs[:, 0])
+# plt.title('J_y')
+# plt.legend()
+# plt.show()
 
-plt.plot(t_meas, x_est[:, 2])
-plt.plot(t, xs[:, 2])
+plt.plot(t_meas, x_est[:, 2], label='EKF')
+plt.plot(t, xs[:, 2], label="simulation")
 plt.show()

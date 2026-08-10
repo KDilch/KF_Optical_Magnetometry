@@ -37,6 +37,10 @@ class Corr_10x10_CC_Sensor_Model(Model):
             self._z = self.hx() * self._dt + self.get_measurement_noise(noise)
         return
 
+    def read_sensor(self):
+        noise = np.random.randn()
+        self.read_cont_sensor(noise)
+
     @staticmethod
     def fx(x, t, params):
         dx_dt = np.zeros(10)

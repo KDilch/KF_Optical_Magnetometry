@@ -31,10 +31,8 @@ class Simple_CC_Correlated_Sensor_Model(Model):
         if method == 'odeint':
             x = odeint(Simple_CC_Correlated_Sensor_Model.dx_dt, self._x,
                        np.linspace(self._t, self._t + self._dt, 20),
-                       args=(self._params.T2,
-                             self._dt,
-                             self.get_intrinsic_noise(noise))[-1, :])
-            self._x = x
+                       args=(self._params,))[-1, :]
+            self._x = x + self.get_intrinsic_noise(noise)
 
         if (method == 'default') or (method == 'naive'):
             dx = np.array([- (1/self._params.T2) * self._x[0] * self._dt + self._x[1] * self._x[2] * self._dt,
@@ -51,6 +49,10 @@ class Simple_CC_Correlated_Sensor_Model(Model):
         else:
             self._z = self.hx() * self._dt + self.get_measurement_noise(noise)
         return
+
+    def read_sensor(self):
+        noise = np.random.randn()
+        self.read_cont_sensor(noise)
 
     @staticmethod
     def fx(x, t, params):

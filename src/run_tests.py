@@ -1,34 +1,27 @@
-# import numpy as np
-# from scipy.fft import fft, fftfreq
-# import matplotlib.pyplot as plt
-#
-#
-# dt = 0.01
-# time = np.arange(1, 10, dt)
-# data = np.array([np.sin(2 * np.pi * 1 * t) for t in time])
-# fftdata = fft(data)
-# sample_rate = 1 / dt
-# num = int(np.size(fftdata))
-# freq = fftfreq(num, dt)
-# print("frequency", abs(freq[np.where(fftdata == np.amax(fftdata))][0]))
-#
-# plt.plot(freq, abs(fftdata))
-# plt.show()
-# SAMPLE_RATE = 44100  # Hertz
-# DURATION = 5  # Seconds
-#
-# def generate_sine_wave(freq, sample_rate, duration):
-#     x = np.linspace(0, duration, sample_rate * duration, endpoint=False)
-#     frequencies = x * freq
-#     # 2pi because np.sin takes radians
-#     y = np.sin((2 * np.pi) * frequencies)
-#     return x, y
-#
-# # Generate a 2 hertz sine wave that lasts for 5 seconds
-# x, y = generate_sine_wave(2, SAMPLE_RATE, DURATION)
-#
-# N = SAMPLE_RATE * DURATION
-#
-# freq = fftfreq(N, 1/SAMPLE_RATE)
+import unittest
+import sys
+import os
+
+
 def run__test(*args):
-    pass
+    # Determine directory of this file (src)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+
+    # Discover tests in tests/
+    tests_dir = os.path.join(current_dir, 'tests')
+    print(f"Discovering and running tests in: {tests_dir}")
+
+    loader = unittest.TestLoader()
+    suite = loader.discover(start_dir=tests_dir, pattern='test_*.py')
+
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+
+    if not result.wasSuccessful():
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    run__test()
