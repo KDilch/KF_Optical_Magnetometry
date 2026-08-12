@@ -85,7 +85,8 @@ class CD_EKF(object):
         # x = x + Ky
         self._x = self._x + np.dot(self._K, self._y)
         I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)
-        self._P = np.dot(np.dot(I_KH, self._P), I_KH.T) + np.dot(np.dot(self._K, self._R), self._K.T)
+        self._P = np.dot(I_KH, self._P)
+        self._P = 0.5 * (self._P + self._P.T)
 
     @property
     def x_est(self):
