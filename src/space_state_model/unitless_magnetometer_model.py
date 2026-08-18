@@ -28,9 +28,10 @@ class UnitlessMagnetometerModel(Model):
         Performs one integration step of self._dt.
         """
         t_span = np.linspace(self._t, self._t + self._dt, num_steps)
+        dt_grid = self._dt / (num_steps - 1)
         
-        # Generates Wiener increments scaled by self._dt to match user's exact simulation code
-        dW = np.array([self.get_intrinsic_noise(self._dt) for _ in t_span[1:]])
+        # Generates Wiener increments scaled by the grid step size to maintain correct continuous-time noise strength
+        dW = np.array([self.get_intrinsic_noise(dt_grid) for _ in t_span[1:]])
         
         # Apply deterministic resets for jump and sine types
         if self._sim_type == "jump":
@@ -81,9 +82,13 @@ class UnitlessMagnetometerModel(Model):
                          np.sqrt(dt),
                          np.sqrt(dt)]) * np.random.randn(3)
 
-    def read_sensor(self):
-        # Measurement: J_z + white noise
-        self._z = self._x[1] + self._sig_v * np.random.randn()
+    def read_sensor(self, with_noise=False):
+        if with_noise:
+            # Measurement: J_z + white noise
+            self._z = self._x[1] + self._sig_v * np.random.randn()
+        else:
+            # Measurement: J_z (clean state)
+            self._z = self._x[1]
         return self._z
 
     def hx(self):

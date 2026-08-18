@@ -48,7 +48,34 @@ class CD_EKF(object):
         return np.reshape(cls.F(x, t, model_params) @ P_matrix + P_matrix @ cls.F(x, t, model_params).T + Q,
                           dim_x ** 2)
 
+    @staticmethod
+    def rk4_step(f, x, t, dt, model_params, cls):
+        k1 = cls.fx(x, t, model_params)
+        k2 = cls.fx(x + 0.5 * dt * k1, t + 0.5 * dt, model_params)
+        k3 = cls.fx(x + 0.5 * dt * k2, t + 0.5 * dt, model_params)
+        k4 = cls.fx(x + dt * k3, t + dt, model_params)
+        return x + (dt / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+
     def predict(self):
+        method = self.model_params.inference_method
+        if method == 'discrete':
+            dt = self._dt
+            F_mat = self.__class__.F(self._x, self._t, self.model_params)
+            
+            # State propagation using RK4
+            self._x = self.rk4_step(self.fx, self._x, self._t, dt, self.model_params, self.__class__)
+            
+            # Covariance propagation: P_new = Ad @ P @ Ad.T + Qd
+            # where Qd = Q_continuous * dt, and Ad = I + F * dt + 0.5 * F^2 * dt^2
+            I = np.eye(self._dim_x)
+            Ad = I + F_mat * dt + 0.5 * (F_mat @ F_mat) * (dt ** 2)
+            Qd = self._Q * dt
+            
+            self._P = Ad @ self._P @ Ad.T + Qd
+            self._P = 0.5 * (self._P + self._P.T)
+            self._t += dt
+            return
+
         max_step = getattr(self.model_params, 'max_step', None)
         P_sol = solve_ivp(CD_EKF.dP_dt,
                           [self._t, self._t + self._dt],
@@ -75,18 +102,33 @@ class CD_EKF(object):
         self._t += self._dt
 
     def update(self, z):
+        y = z
+        x = self._x
+        P = self._P
+        R_delta = self._R
+        H = self._H
+
+        # Compute innovation (difference between actual and predicted measurement)
+        innovation = np.array([y]) - np.dot(H, x)
+
+        # Innovation covariance
+        S = np.dot(H, np.dot(P, H.T)) + R_delta
+
+        # Kalman gain
+        K = np.dot(P, np.dot(H.T, np.linalg.inv(S)))
+
+        # State update
+        x_new = x + np.dot(K, innovation)
+
+        # Covariance update
+        P_new = (np.eye(self._dim_x) - K @ H) @ P
+        P_new = 0.5 * (P_new + P_new.T)
+        
+        self._x = x_new
+        self._P = P_new
         self._z = z
-        self._y = self._z - np.dot(self._H, self._x)  # innovation
-        PHT = np.dot(self._P, self._H.T)
-        S = np.dot(self._H, PHT) + self._R
-        S_INV = np.linalg.inv(S)
-        # K = PH'inv(S)
-        self._K = np.dot(PHT, S_INV)
-        # x = x + Ky
-        self._x = self._x + np.dot(self._K, self._y)
-        I_KH = np.identity(self._dim_x) - np.dot(self._K, self._H)
-        self._P = np.dot(I_KH, self._P)
-        self._P = 0.5 * (self._P + self._P.T)
+        self._y = innovation
+        self._K = K
 
     @property
     def x_est(self):

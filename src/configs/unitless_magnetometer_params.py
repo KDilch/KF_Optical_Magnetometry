@@ -114,7 +114,12 @@ class UnitlessSimpleMagnetometerConfigurator:
 
     def get_filter_params(self, dw0: float = 0.01, dJ: float = 0.01, filter_dc: float = None) -> UnitlessFilterParams:
         if filter_dc is None:
-            filter_dc = 0.01 if self.sim_type in ["sine", "jump"] else self.dc
+            if self.sim_type == "jump":
+                filter_dc = 1.0
+            elif self.sim_type == "sine":
+                filter_dc = 0.01
+            else:
+                filter_dc = self.dc
             
         if self.sim_type == "sine":
             dw0_val = 1.1
@@ -131,14 +136,20 @@ class UnitlessSimpleMagnetometerConfigurator:
         ])
         Q_filter = np.diag([2.0, 2.0, filter_dc])
 
-        factor = 200.0 if self.sim_type == "OU" else 20.0
+        if self.sim_type == "OU":
+            factor = 200.0
+        elif self.sim_type in ["sine", "jump"]:
+            factor = 20.0
+        else:
+            factor = 1.0
+            
         max_step = self.meas_probing_rate_unitless / (self.measure_every_nth * factor)
 
         return UnitlessFilterParams(
             x_0=x0_filter,
             t_0=0.0,
             dt=self.meas_probing_rate_unitless,
-            inference_method='RK45',
+            inference_method='discrete',
             type=self.sim_type,
             tau=self.tau,
             w01=self.w01,

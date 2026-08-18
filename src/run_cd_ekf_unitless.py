@@ -10,6 +10,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from configs.unitless_magnetometer_params import UnitlessSimpleMagnetometerConfigurator
 from space_state_model.unitless_magnetometer_model import UnitlessMagnetometerModel
 from kalman_filter.unitless_cd_ekf import CD_EKF_unitless_magnetometer
+from kalman_filter.unitless_cd_ckf import CD_CKF_unitless_magnetometer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,35 +35,33 @@ def run_simulation(configurator: UnitlessSimpleMagnetometerConfigurator, num_ste
     
     # Allocate memory for simulation results
     xs = np.zeros((len(time_arr), 3))
-    z_s = np.zeros(len(time_arr))
+    
+    # Pre-allocate lists for measurements
+    yh = []
+    t_meas = []
+    x_sim_meas = []
     
     logger.info(f"Running unitless SDE simulation (type={sim_type}) for {len(time_arr)} steps...")
     
     # Run simulation step-by-step
     for index, time in enumerate(tqdm.tqdm(time_arr, desc='Simulation')):
-        x, z = model.step(num_steps=num_steps)
+        x, _ = model.step(num_steps=num_steps)
         xs[index] = x
-        z_s[index] = z
         
-    # Generate measurements at every nth probing step
-    yh = []
-    t_meas = []
-    x_sim_meas = []
-    
-    for idx, time in enumerate(time_arr):
-        if idx % measure_every_nth == 0:
-            yh.append(z_s[idx])
+        # Read the sensor with noise only at measurement intervals
+        if index % measure_every_nth == 0:
+            yh.append(model.read_sensor(with_noise=True))
             t_meas.append(time)
-            x_sim_meas.append(xs[idx])
+            x_sim_meas.append(x)
             
     yh = np.array(yh)
     t_meas = np.array(t_meas)
     x_sim_meas = np.array(x_sim_meas)
-
+ 
     sim_data = {
         'time_arr': time_arr,
         'xs': xs,
-        'z_s': z_s,
+        'z_s': xs[:, 1],  # Store clean J_z trajectory as baseline z_s
         't_meas': t_meas,
         'yh': yh,
         'x_sim_meas': x_sim_meas
@@ -76,26 +75,33 @@ def run_simulation(configurator: UnitlessSimpleMagnetometerConfigurator, num_ste
     return sim_data
 
 
-def run_inference(configurator: UnitlessSimpleMagnetometerConfigurator, t_meas: np.ndarray, yh: np.ndarray, save_path=None) -> dict:
+def run_inference(configurator: UnitlessSimpleMagnetometerConfigurator, t_meas: np.ndarray, yh: np.ndarray, save_path=None, filter_cls=None, desc='Filter') -> dict:
     """
-    Runs EKF estimation over provided measurement arrays.
+    Runs estimation over provided measurement arrays using the specified filter class.
     Saves filter estimate arrays to `save_path` (NPZ) if specified.
     """
+    if filter_cls is None:
+        filter_cls = CD_EKF_unitless_magnetometer
+        
     filter_params = configurator.get_filter_params()
-    ekf = CD_EKF_unitless_magnetometer(model_params=filter_params)
+    # For CKF, we default the inference method to discrete (analytical state transition)
+    if filter_cls == CD_CKF_unitless_magnetometer:
+        filter_params.inference_method = 'discrete'
+        
+    filt = filter_cls(model_params=filter_params)
     
-    # Allocate memory for EKF estimates
+    # Allocate memory for estimates
     x_est = np.zeros((len(yh), 3))
     P_est = np.zeros((len(yh), 3))
     
-    logger.info(f"Running CD EKF updates and predictions for {len(t_meas)} measurement points...")
+    logger.info(f"Running CD {desc} updates and predictions for {len(t_meas)} measurement points...")
     
-    # Run EKF filter
-    for index, val in enumerate(tqdm.tqdm(t_meas, desc='EKF Filter')):
-        ekf.update(yh[index])
-        x_est[index] = ekf.x_est
-        P_est[index] = [ekf.P_est[0, 0], ekf.P_est[1, 1], ekf.P_est[2, 2]]
-        ekf.predict()
+    # Run filter
+    for index, val in enumerate(tqdm.tqdm(t_meas, desc=desc)):
+        filt.update(yh[index])
+        x_est[index] = filt.x_est
+        P_est[index] = [filt.P_est[0, 0], filt.P_est[1, 1], filt.P_est[2, 2]]
+        filt.predict()
 
     inf_data = {
         'x_est': x_est,
@@ -113,48 +119,61 @@ def run_inference(configurator: UnitlessSimpleMagnetometerConfigurator, t_meas: 
 def generate_plots_and_report(
     configurator: UnitlessSimpleMagnetometerConfigurator,
     sim_data: dict,
-    inf_data: dict,
-    output_dir: str
+    ekf_data: dict,
+    ckf_data: dict,
+    output_dir: str,
+    timestamp: str = None,
+    run_time: datetime = None
 ):
     """
-    Computes estimation errors, plots coordinates & errors with 3-sigma bounds,
-    and generates a detailed Markdown report.
+    Computes estimation errors, plots coordinates & errors with 3-sigma bounds for EKF and CKF,
+    and generates a detailed comparison report.
     """
     os.makedirs(output_dir, exist_ok=True)
+    if run_time is None:
+        run_time = datetime.now()
+    if timestamp is None:
+        timestamp = run_time.strftime("%Y%m%d_%H%M%S")
+
     T2 = configurator.T2
     xc = configurator.xc
     
     time_arr = sim_data['time_arr']
     xs = sim_data['xs']
-    z_s = sim_data['z_s']
     t_meas = sim_data['t_meas']
     yh = sim_data['yh']
     x_sim_meas = sim_data['x_sim_meas']
     
-    x_est = inf_data['x_est']
-    P_est = inf_data['P_est']
+    x_ekf = ekf_data['x_est']
+    P_ekf = ekf_data['P_est']
+    
+    x_ckf = ckf_data['x_est']
+    P_ckf = ckf_data['P_est']
 
     t2_ms = T2 * 1e3
 
-    # --- Plot 1: Coordinates Plot (Sim vs EKF) ---
+    # --- Plot 1: Coordinates Plot (Sim vs EKF vs CKF) ---
     fig, axs = plt.subplots(3, 1, layout='constrained', figsize=(9, 9))
     
     # Jy plot
     axs[0].plot(time_arr * T2 * 1e3, xs[:, 0] / xc, label='Sim J_y', color='C0')
-    axs[0].plot(t_meas * T2 * 1e3, x_est[:, 0] / xc, '--', label='EKF J_y', color='orange')
+    axs[0].plot(t_meas * T2 * 1e3, x_ekf[:, 0] / xc, '--', label='EKF J_y', color='orange')
+    axs[0].plot(t_meas * T2 * 1e3, x_ckf[:, 0] / xc, ':', label='CKF J_y', color='green')
     axs[0].set_ylabel('J_y')
     axs[0].grid(True)
     
     # Jz plot
     axs[1].plot(time_arr * T2 * 1e3, xs[:, 1] / xc, label='Sim J_z', color='C0')
-    axs[1].plot(t_meas * T2 * 1e3, x_est[:, 1] / xc, '--', label='EKF J_z', color='orange')
+    axs[1].plot(t_meas * T2 * 1e3, x_ekf[:, 1] / xc, '--', label='EKF J_z', color='orange')
+    axs[1].plot(t_meas * T2 * 1e3, x_ckf[:, 1] / xc, ':', label='CKF J_z', color='green')
     axs[1].scatter(t_meas * T2 * 1e3, yh / xc, color='red', alpha=0.3, s=5, label='Meas (noisy)')
     axs[1].set_ylabel('J_z')
     axs[1].grid(True)
     
     # Frequency plot
     axs[2].plot(time_arr * T2 * 1e3, xs[:, 2] / T2, label='Sim omega', color='C0')
-    axs[2].plot(t_meas * T2 * 1e3, x_est[:, 2] / T2, '--', label='EKF omega', color='orange')
+    axs[2].plot(t_meas * T2 * 1e3, x_ekf[:, 2] / T2, '--', label='EKF omega', color='orange')
+    axs[2].plot(t_meas * T2 * 1e3, x_ckf[:, 2] / T2, ':', label='CKF omega', color='green')
     axs[2].set_ylabel('omega')
     axs[2].set_xlabel('Time (ms)')
     axs[2].grid(True)
@@ -163,52 +182,78 @@ def generate_plots_and_report(
         ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
         ax.legend()
     
-    plt.suptitle(f"Unitless Magnetometer EKF Tracking (type={configurator.sim_type})")
-    coord_plot_path = os.path.join(output_dir, 'coordinates_plot.png')
+    plt.suptitle(f"Unitless Magnetometer EKF vs CKF Comparison (type={configurator.sim_type})")
+    coord_plot_filename = f"coordinates_plot_{timestamp}.png"
+    coord_plot_path = os.path.join(output_dir, coord_plot_filename)
     plt.savefig(coord_plot_path, dpi=150)
     plt.close()
 
     # --- Plot 2: Estimation Errors & 3-Sigma Bounds (Omega Only) ---
-    err = x_est - x_sim_meas
-    sigma = np.sqrt(P_est)
+    err_ekf = x_ekf - x_sim_meas
+    sigma_ekf = np.sqrt(P_ekf)
+    
+    err_ckf = x_ckf - x_sim_meas
+    sigma_ckf = np.sqrt(P_ckf)
     
     fig_err, ax_e = plt.subplots(layout='constrained', figsize=(9, 5))
     
-    # Omega error index is 2
-    err_scaled = err[:, 2] / T2
-    sigma_scaled = sigma[:, 2] / T2
+    err_ekf_scaled = err_ekf[:, 2] / T2
+    sigma_ekf_scaled = sigma_ekf[:, 2] / T2
     
-    ax_e.plot(t_meas * T2 * 1e3, err_scaled, label='Omega Error', color='purple')
+    err_ckf_scaled = err_ckf[:, 2] / T2
+    sigma_ckf_scaled = sigma_ckf[:, 2] / T2
+    
+    ax_e.plot(t_meas * T2 * 1e3, err_ekf_scaled, label='EKF Error', color='orange')
     ax_e.fill_between(
         t_meas * T2 * 1e3, 
-        -3 * sigma_scaled, 
-        3 * sigma_scaled, 
-        color='purple', 
-        alpha=0.15, 
-        label='+- 3-sigma covariance bounds'
+        -3 * sigma_ekf_scaled, 
+        3 * sigma_ekf_scaled, 
+        color='orange', 
+        alpha=0.1, 
+        label='EKF +- 3-sigma bounds'
     )
+    
+    ax_e.plot(t_meas * T2 * 1e3, err_ckf_scaled, label='CKF Error', color='green')
+    ax_e.fill_between(
+        t_meas * T2 * 1e3, 
+        -3 * sigma_ckf_scaled, 
+        3 * sigma_ckf_scaled, 
+        color='green', 
+        alpha=0.1, 
+        label='CKF +- 3-sigma bounds'
+    )
+    
     ax_e.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
     ax_e.set_ylabel('omega error')
     ax_e.set_xlabel('Time (ms)')
     ax_e.grid(True)
     ax_e.legend()
     
-    plt.suptitle(f"Larmor Frequency (omega) Estimation Error (type={configurator.sim_type})")
-    error_plot_path = os.path.join(output_dir, 'errors_plot.png')
+    plt.suptitle(f"Frequency (omega) Estimation Errors (type={configurator.sim_type})")
+    error_plot_filename = f"errors_plot_{timestamp}.png"
+    error_plot_path = os.path.join(output_dir, error_plot_filename)
     plt.savefig(error_plot_path, dpi=150)
     plt.close()
 
     # --- Generate Markdown Report ---
     type_str = configurator.sim_type if configurator.sim_type is not None else "constant_omega"
-    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}"
+    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}_{timestamp}"
     
     report_path = os.path.join(output_dir, f"{report_base}.md")
-    abs_sim_path = os.path.abspath(os.path.join(output_dir, 'simulation_data.npz'))
-    abs_inf_path = os.path.abspath(os.path.join(output_dir, 'inference_data.npz'))
+    sim_data_filename = f"simulation_data_{timestamp}.npz"
+    ekf_data_filename = f"ekf_inference_data_{timestamp}.npz"
+    ckf_data_filename = f"ckf_inference_data_{timestamp}.npz"
     
-    report_content = f"""# Unitless Magnetometer Simulation and EKF Run Report
+    abs_sim_path = os.path.abspath(os.path.join(output_dir, sim_data_filename))
+    abs_ekf_path = os.path.abspath(os.path.join(output_dir, ekf_data_filename))
+    abs_ckf_path = os.path.abspath(os.path.join(output_dir, ckf_data_filename))
+    
+    ekf_mae = np.mean(np.abs(err_ekf[:, 2]))
+    ckf_mae = np.mean(np.abs(err_ckf[:, 2]))
+    
+    report_content = f"""# Unitless Magnetometer EKF vs CKF Comparison Report
 
-**Date/Time:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+**Date/Time:** {run_time.strftime("%Y-%m-%d %H:%M:%S")}
 **Simulation Type:** {configurator.sim_type}
 
 ## Configuration parameters
@@ -233,18 +278,22 @@ def generate_plots_and_report(
 - **Unitless step size (h1):** {configurator.h1}
 - **Unitless measurement interval:** {configurator.meas_probing_rate_unitless}
 
-## Data Files
+## Estimator Comparison Results
+- **EKF Mean Absolute Error (MAE):** {ekf_mae:.5f}
+- **CKF Mean Absolute Error (MAE):** {ckf_mae:.5f}
 
-- **Simulation Data:** [{os.path.basename(abs_sim_path)}](file:///{abs_sim_path.replace(os.sep, '/')})
-- **EKF Inference Data:** [{os.path.basename(abs_inf_path)}](file:///{abs_inf_path.replace(os.sep, '/')})
+## Data Files
+- **Simulation Data:** [simulation_data_{timestamp}.npz](file:///{abs_sim_path.replace(os.sep, '/')})
+- **EKF Inference Data:** [ekf_inference_data_{timestamp}.npz](file:///{abs_ekf_path.replace(os.sep, '/')})
+- **CKF Inference Data:** [ckf_inference_data_{timestamp}.npz](file:///{abs_ckf_path.replace(os.sep, '/')})
 
 ## Visualizations
 
 ### Tracking Coordinates (Simulated vs Estimated)
-![Coordinates Tracking](coordinates_plot.png)
+![Coordinates Tracking]({coord_plot_filename})
 
 ### Estimation Errors with $\pm 3\sigma$ Covariance Bounds (Omega Only)
-![Estimation Errors](errors_plot.png)
+![Estimation Errors]({error_plot_filename})
 """
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(report_content)
@@ -257,8 +306,8 @@ def generate_plots_and_report(
         fig_text.clf()
         
         text_content = (
-            "Unitless Magnetometer Simulation and EKF Run Report\n\n"
-            f"Date/Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            "Unitless Magnetometer EKF vs CKF Report\n\n"
+            f"Date/Time: {run_time.strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"Simulation Type: {configurator.sim_type}\n\n"
             "Configuration Parameters:\n"
             f"- Number of atoms (N): {configurator.N}\n"
@@ -268,21 +317,16 @@ def generate_plots_and_report(
             f"- Photon noise PSD (Sph): {configurator.Sph} pA^2/Hz\n"
             f"- Mean Larmor frequency (w0): {configurator.w0} rad/s\n"
             f"- Time step (h): {configurator.h} s\n"
-            f"- Probing rate factor (measure_every_nth): {configurator.measure_every_nth}\n"
-            f"- Diffusion constant (dc): {configurator.dc}\n"
-            f"- Relaxation time constant (tau): {configurator.tau}\n\n"
-            "Derived Unitless Parameters:\n"
-            f"- Effective atoms (Nq): {configurator.Nq}\n"
-            f"- State scaling (xc): {configurator.xc}\n"
-            f"- Measurement scaling (yc): {configurator.yc}\n"
-            f"- Measurement noise (sig_v): {configurator.sig_v}\n"
-            f"- Unitless step size (h1): {configurator.h1}\n"
-            f"- Unitless measurement interval: {configurator.meas_probing_rate_unitless}\n\n"
+            f"- Probing rate factor (measure_every_nth): {configurator.measure_every_nth}\n\n"
+            "Performance Comparison:\n"
+            f"- EKF Mean Absolute Error (MAE): {ekf_mae:.5f}\n"
+            f"- CKF Mean Absolute Error (MAE): {ckf_mae:.5f}\n\n"
             "Data Files Saved in Subfolder:\n"
-            "- Simulation Data: simulation_data.npz\n"
-            "- EKF Inference Data: inference_data.npz\n"
+            f"- Simulation Data: {sim_data_filename}\n"
+            f"- EKF Inference Data: {ekf_data_filename}\n"
+            f"- CKF Inference Data: {ckf_data_filename}\n"
         )
-        fig_text.text(0.1, 0.95, "Unitless Magnetometer Run Report", fontsize=16, fontweight='bold', va='top')
+        fig_text.text(0.1, 0.95, "Unitless Magnetometer EKF vs CKF Report", fontsize=16, fontweight='bold', va='top')
         fig_text.text(0.1, 0.9, text_content, fontsize=10, fontfamily='monospace', va='top')
         pdf.savefig(fig_text)
         plt.close(fig_text)
@@ -290,18 +334,21 @@ def generate_plots_and_report(
         # Page 2: Coordinates Plot
         fig_coord, axs_c = plt.subplots(3, 1, layout='constrained', figsize=(8.5, 11))
         axs_c[0].plot(time_arr * T2 * 1e3, xs[:, 0] / xc, label='Sim J_y', color='C0')
-        axs_c[0].plot(t_meas * T2 * 1e3, x_est[:, 0] / xc, '--', label='EKF J_y', color='orange')
+        axs_c[0].plot(t_meas * T2 * 1e3, x_ekf[:, 0] / xc, '--', label='EKF J_y', color='orange')
+        axs_c[0].plot(t_meas * T2 * 1e3, x_ckf[:, 0] / xc, ':', label='CKF J_y', color='green')
         axs_c[0].set_ylabel('J_y')
         axs_c[0].grid(True)
         
         axs_c[1].plot(time_arr * T2 * 1e3, xs[:, 1] / xc, label='Sim J_z', color='C0')
-        axs_c[1].plot(t_meas * T2 * 1e3, x_est[:, 1] / xc, '--', label='EKF J_z', color='orange')
+        axs_c[1].plot(t_meas * T2 * 1e3, x_ekf[:, 1] / xc, '--', label='EKF J_z', color='orange')
+        axs_c[1].plot(t_meas * T2 * 1e3, x_ckf[:, 1] / xc, ':', label='CKF J_z', color='green')
         axs_c[1].scatter(t_meas * T2 * 1e3, yh / xc, color='red', alpha=0.3, s=5, label='Meas (noisy)')
         axs_c[1].set_ylabel('J_z')
         axs_c[1].grid(True)
         
         axs_c[2].plot(time_arr * T2 * 1e3, xs[:, 2] / T2, label='Sim omega', color='C0')
-        axs_c[2].plot(t_meas * T2 * 1e3, x_est[:, 2] / T2, '--', label='EKF omega', color='orange')
+        axs_c[2].plot(t_meas * T2 * 1e3, x_ekf[:, 2] / T2, '--', label='EKF omega', color='orange')
+        axs_c[2].plot(t_meas * T2 * 1e3, x_ckf[:, 2] / T2, ':', label='CKF omega', color='green')
         axs_c[2].set_ylabel('omega')
         axs_c[2].set_xlabel('Time (ms)')
         axs_c[2].grid(True)
@@ -310,20 +357,29 @@ def generate_plots_and_report(
             ax.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
             ax.legend()
             
-        fig_coord.suptitle(f"Unitless Magnetometer EKF Tracking (type={configurator.sim_type})")
+        fig_coord.suptitle(f"Coordinates Tracking Comparison (type={configurator.sim_type})")
         pdf.savefig(fig_coord)
         plt.close(fig_coord)
         
         # Page 3: Errors Plot (Omega Only)
         fig_err, ax_pe = plt.subplots(layout='constrained', figsize=(8.5, 11))
-        ax_pe.plot(t_meas * T2 * 1e3, err_scaled, label='Omega Error', color='purple')
+        ax_pe.plot(t_meas * T2 * 1e3, err_ekf_scaled, label='EKF Error', color='orange')
         ax_pe.fill_between(
             t_meas * T2 * 1e3, 
-            -3 * sigma_scaled, 
-            3 * sigma_scaled, 
-            color='purple', 
-            alpha=0.15, 
-            label='+- 3-sigma covariance bounds'
+            -3 * sigma_ekf_scaled, 
+            3 * sigma_ekf_scaled, 
+            color='orange', 
+            alpha=0.1, 
+            label='EKF +- 3-sigma bounds'
+        )
+        ax_pe.plot(t_meas * T2 * 1e3, err_ckf_scaled, label='CKF Error', color='green')
+        ax_pe.fill_between(
+            t_meas * T2 * 1e3, 
+            -3 * sigma_ckf_scaled, 
+            3 * sigma_ckf_scaled, 
+            color='green', 
+            alpha=0.1, 
+            label='CKF +- 3-sigma bounds'
         )
         ax_pe.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
         ax_pe.set_ylabel('omega error')
@@ -331,7 +387,7 @@ def generate_plots_and_report(
         ax_pe.grid(True)
         ax_pe.legend()
         
-        fig_err.suptitle(f"Larmor Frequency (omega) Estimation Error (type={configurator.sim_type})")
+        fig_err.suptitle(f"Frequency (omega) Estimation Errors Comparison (type={configurator.sim_type})")
         pdf.savefig(fig_err)
         plt.close(fig_err)
         
@@ -346,45 +402,57 @@ def run_pipeline(
 ) -> str:
     """
     Main pipeline runner.
-    If `data_input_path` is specified, SDE simulation is skipped and data is loaded from that file.
-    Otherwise, SDE simulation runs.
-    Runs EKF inference, generates coordinates & errors plots, and outputs report.md.
+    Runs EKF and CKF inference, generates coordinates & errors plots, and outputs report.md.
     """
     if configurator is None:
         configurator = UnitlessSimpleMagnetometerConfigurator()
 
+    run_time = datetime.now()
+    timestamp = run_time.strftime("%Y%m%d_%H%M%S")
+
     if output_dir is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_dir = os.path.join("runs", f"run_{timestamp}")
 
     os.makedirs(output_dir, exist_ok=True)
 
-    sim_data_path = os.path.join(output_dir, "simulation_data.npz")
-    inf_data_path = os.path.join(output_dir, "inference_data.npz")
+    sim_data_path = os.path.join(output_dir, f"simulation_data_{timestamp}.npz")
+    ekf_data_path = os.path.join(output_dir, f"ekf_inference_data_{timestamp}.npz")
+    ckf_data_path = os.path.join(output_dir, f"ckf_inference_data_{timestamp}.npz")
 
     # Step 1: Get Simulation Data (Load or Run)
     if data_input_path:
         logger.info(f"Loading simulation data from file: {data_input_path}")
         loaded = np.load(data_input_path)
         sim_data = {key: loaded[key] for key in loaded.files}
-        # Copy loaded simulation data to target output folder for completeness
         np.savez(sim_data_path, **sim_data)
     else:
         sim_data = run_simulation(configurator, num_steps=num_steps, save_path=sim_data_path)
 
     # Step 2: Run CD EKF Inference
-    inf_data = run_inference(
+    ekf_data = run_inference(
         configurator, 
         t_meas=sim_data['t_meas'], 
         yh=sim_data['yh'], 
-        save_path=inf_data_path
+        save_path=ekf_data_path,
+        filter_cls=CD_EKF_unitless_magnetometer,
+        desc='EKF Filter'
     )
 
-    # Step 3: Plots and Report Generation
-    generate_plots_and_report(configurator, sim_data, inf_data, output_dir)
+    # Step 3: Run CD CKF Inference
+    ckf_data = run_inference(
+        configurator, 
+        t_meas=sim_data['t_meas'], 
+        yh=sim_data['yh'], 
+        save_path=ckf_data_path,
+        filter_cls=CD_CKF_unitless_magnetometer,
+        desc='CKF Filter'
+    )
+
+    # Step 4: Plots and Report Generation
+    generate_plots_and_report(configurator, sim_data, ekf_data, ckf_data, output_dir, timestamp=timestamp, run_time=run_time)
     
     type_str = configurator.sim_type if configurator.sim_type is not None else "constant_omega"
-    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}"
+    report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}_{timestamp}"
     
     return output_dir, report_base
 
@@ -393,9 +461,9 @@ def run_constant_omega_case():
     """Runs a full simulation and EKF inference for constant Larmor frequency (omega)."""
     config = UnitlessSimpleMagnetometerConfigurator(
         sim_type=None,
-        tf=1.74,
+        tf=2.0,
         dc=0.0,
-        tau=1e3,
+        tau=0.001,
         measure_every_nth=100
     )
     result_dir, report_name = run_pipeline(
@@ -413,7 +481,7 @@ def run_ou_process_case():
         tf=1.0,
         dc=0.01,
         tau=1e3,
-        measure_every_nth=100
+        measure_every_nth=10
     )
     result_dir, report_name = run_pipeline(
         configurator=config,
@@ -423,11 +491,51 @@ def run_ou_process_case():
     print(f"OU Process pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
 
 
+def run_sine_case():
+    """Runs a full simulation and EKF inference for a sinusoidal Larmor frequency process."""
+    config = UnitlessSimpleMagnetometerConfigurator(
+        sim_type="sine",
+        tf=2.0,
+        dc=0.0,
+        tau=1e3,
+        measure_every_nth=10
+    )
+    result_dir, report_name = run_pipeline(
+        configurator=config,
+        num_steps=20,
+        output_dir="runs/run_sine"
+    )
+    print(f"Sine pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
+
+
+def run_jump_case():
+    """Runs a full simulation and EKF inference for a piecewise constant jump (step) Larmor frequency process."""
+    config = UnitlessSimpleMagnetometerConfigurator(
+        sim_type="jump",
+        tf=2.0,
+        dc=0.0,
+        tau=1e3,
+        measure_every_nth=10
+    )
+    result_dir, report_name = run_pipeline(
+        configurator=config,
+        num_steps=20,
+        output_dir="runs/run_jump"
+    )
+    print(f"Jump pipeline executed successfully. View report at: {os.path.abspath(os.path.join(result_dir, f'{report_name}.md'))}")
+
+
 if __name__ == "__main__":
-    # Uncomment the simulation case you want to execute:
+    # Execute all cases to compare the estimator behaviors:
     
     # 1. Constant Larmor frequency (omega) simulation and EKF tracking
-    # run_constant_omega_case()
+    run_constant_omega_case()
     
     # 2. OU Larmor frequency process simulation and EKF tracking
     run_ou_process_case()
+    
+    # 3. Sinusoidal Larmor frequency simulation and EKF tracking
+    run_sine_case()
+    
+    # 4. Piecewise constant step/jump Larmor frequency simulation and EKF tracking
+    run_jump_case()
