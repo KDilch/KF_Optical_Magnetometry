@@ -11,6 +11,7 @@ from configs.unitless_magnetometer_params import UnitlessSimpleMagnetometerConfi
 from space_state_model.unitless_magnetometer_model import UnitlessMagnetometerModel
 from kalman_filter.unitless_cd_ekf import CD_EKF_unitless_magnetometer
 from kalman_filter.unitless_cd_ckf import CD_CKF_unitless_magnetometer
+from evaluation.crb_pem import PredictionErrorMethod, CramerRaoBounds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -123,7 +124,8 @@ def generate_plots_and_report(
     ckf_data: dict,
     output_dir: str,
     timestamp: str = None,
-    run_time: datetime = None
+    run_time: datetime = None,
+    crb_data: dict = None
 ):
     """
     Computes estimation errors, plots coordinates & errors with 3-sigma bounds for EKF and CKF,
@@ -223,6 +225,13 @@ def generate_plots_and_report(
         label='CKF +- 3-sigma bounds'
     )
     
+    # Plot steady-state Asymptotic CRB bounds if available
+    if crb_data is not None:
+        asympt_crb_mhz = crb_data['asympt_crb']
+        crb_std_rad_s = (asympt_crb_mhz * 1e-3) * 2.0 * np.pi
+        ax_e.axhline(y=3.0 * crb_std_rad_s, color='blue', linestyle=':', label='Asympt. CRB +3-sigma limit')
+        ax_e.axhline(y=-3.0 * crb_std_rad_s, color='blue', linestyle=':', label='Asympt. CRB -3-sigma limit')
+        
     ax_e.axvline(x=t2_ms, color='red', linestyle='--', label=f'T2 relaxation time ({t2_ms:.2f} ms)')
     ax_e.set_ylabel('omega error')
     ax_e.set_xlabel('Time (ms)')
@@ -251,11 +260,25 @@ def generate_plots_and_report(
     ekf_mae = np.mean(np.abs(err_ekf[:, 2]))
     ckf_mae = np.mean(np.abs(err_ckf[:, 2]))
     
+    # Append CRB and PEM information if available
+    crb_report_section = ""
+    if crb_data is not None:
+        true_f_L = configurator.w0 / (2.0 * np.pi)
+        pem_freq_hz = crb_data['pem_freq_hz']
+        pem_error_hz = pem_freq_hz - true_f_L
+        crb_report_section = f"""
+## Cramér-Rao Bounds & Prediction Error Method (Constant Omega Only)
+- **Analytical Asymptotic CRB:** {crb_data['asympt_crb']:.5f} mHz
+- **Monte Carlo CRB (ntries=20):** {crb_data['mc_crb']:.5f} mHz
+- **PEM Frequency Estimate:** {pem_freq_hz:.5f} Hz (True: {true_f_L:.5f} Hz)
+- **PEM Estimation Error:** {pem_error_hz * 1e3:.5f} mHz
+"""
+
     report_content = f"""# Unitless Magnetometer EKF vs CKF Comparison Report
 
 **Date/Time:** {run_time.strftime("%Y-%m-%d %H:%M:%S")}
 **Simulation Type:** {configurator.sim_type}
-
+{crb_report_section}
 ## Configuration parameters
 
 ### Physical & Solver Baseline parameters
@@ -321,6 +344,19 @@ def generate_plots_and_report(
             "Performance Comparison:\n"
             f"- EKF Mean Absolute Error (MAE): {ekf_mae:.5f}\n"
             f"- CKF Mean Absolute Error (MAE): {ckf_mae:.5f}\n\n"
+        )
+        if crb_data is not None:
+            true_f_L = configurator.w0 / (2.0 * np.pi)
+            pem_freq_hz = crb_data['pem_freq_hz']
+            pem_error_hz = pem_freq_hz - true_f_L
+            text_content += (
+                "Cramér-Rao Bounds & PEM:\n"
+                f"- Analytical Asymptotic CRB: {crb_data['asympt_crb']:.5f} mHz\n"
+                f"- Monte Carlo CRB (ntries=20): {crb_data['mc_crb']:.5f} mHz\n"
+                f"- PEM Freq Estimate: {pem_freq_hz:.5f} Hz\n"
+                f"- PEM Estimation Error: {pem_error_hz * 1e3:.5f} mHz\n\n"
+            )
+        text_content += (
             "Data Files Saved in Subfolder:\n"
             f"- Simulation Data: {sim_data_filename}\n"
             f"- EKF Inference Data: {ekf_data_filename}\n"
@@ -448,8 +484,38 @@ def run_pipeline(
         desc='CKF Filter'
     )
 
-    # Step 4: Plots and Report Generation
-    generate_plots_and_report(configurator, sim_data, ekf_data, ckf_data, output_dir, timestamp=timestamp, run_time=run_time)
+    # Step 4: Run CRB & PEM calculations (only for constant Larmor frequency case)
+    crb_data = None
+    if configurator.sim_type is None:
+        logger.info("Computing Cramér-Rao Bounds and PEM estimates...")
+        crb_calc = CramerRaoBounds(configurator)
+        asympt_crb = crb_calc.calculate_asymptotic()
+        
+        # Monte Carlo CRB for the measurement size (run with 20 tries for speed in pipeline)
+        nsamples = len(sim_data['yh'])
+        mc_crb = crb_calc.calculate_monte_carlo(nsamples=nsamples, ntries=20)
+        
+        # PEM estimate
+        T0 = configurator.meas_probing_rate_unitless
+        sig_v = configurator.sig_v
+        xc = configurator.xc
+        xini = np.array([0.0, 0.5 * xc * configurator.N])
+        m0_m = xini.copy()
+        S0_m = np.zeros((2, 2))
+        pem_estimator = PredictionErrorMethod(T0, sig_v, m0_m, S0_m)
+        th_range = (configurator.w01 - 20.0, configurator.w01 + 20.0)
+        th_est, _ = pem_estimator.estimate(sim_data['yh'], th_range)
+        pem_freq_hz = th_est / (2.0 * np.pi * configurator.T2)
+        
+        crb_data = {
+            'asympt_crb': asympt_crb,
+            'mc_crb': mc_crb,
+            'pem_freq_hz': pem_freq_hz,
+            'th_est': th_est
+        }
+
+    # Step 5: Plots and Report Generation
+    generate_plots_and_report(configurator, sim_data, ekf_data, ckf_data, output_dir, timestamp=timestamp, run_time=run_time, crb_data=crb_data)
     
     type_str = configurator.sim_type if configurator.sim_type is not None else "constant_omega"
     report_base = f"report_sim_{type_str}_dc_{configurator.dc}_tf_{configurator.tf}_{timestamp}"
